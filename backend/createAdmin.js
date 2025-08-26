@@ -1,37 +1,30 @@
-require('dotenv').config();
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const User = require('./models/User'); // adjust path if different
+const dotenv = require('dotenv');
+dotenv.config();
 
-const mongoURI = process.env.MONGODB_URI;
+// Import your User model
+const User = require('./models/User'); // make sure path is correct
+
+// Use your Atlas or local URI
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/SW';
 
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(async () => {
-    console.log('Connected to MongoDB Atlas');
+    console.log('MongoDB Connected');
 
-    const adminEmail = 'admin@example.com'; // your admin email
-    const adminPassword = 'Admin123!';      // your admin password
-
-    const existingAdmin = await User.findOne({ email: adminEmail });
-    if (existingAdmin) {
-      console.log('Admin user already exists');
-      process.exit(0);
-    }
-
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
-    const adminUser = new User({
+    // Create admin user
+    const admin = new User({
       name: 'Admin',
-      email: adminEmail,
-      password: hashedPassword,
-      role: 'admin',
+      email: 'admin@example.com',
+      password: 'Admin123!', // hash it if your app does
+      role: 'admin'
     });
 
-    await adminUser.save();
-    console.log('✅ Admin user created successfully!');
+    await admin.save();
+    console.log('Admin user created!');
     process.exit(0);
   })
   .catch(err => {
-    console.error('Error:', err);
+    console.error('Error connecting to MongoDB:', err);
     process.exit(1);
   });
