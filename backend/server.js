@@ -1,39 +1,30 @@
-const express = require('express');
-const multer = require('multer');
-const mongoose = require('mongoose');
-const cors = require('cors');
+// server.js
 const dotenv = require('dotenv');
-const rateLimit = require('express-rate-limit');
-const path = require('path'); 
-const authRoutes = require('./routes/authRoutes');
-const assignmentRoutes = require('./routes/assignmentRoutes');
-const gradeRoutes = require('./routes/gradesRoutes');
-const announcementRoutes = require('./routes/announcementRoutes');
-const profileRoutes = require('./routes/profileRoutes');
-const resourceRoutes = require('./routes/resourceRoutes');
-// Temporarily disabled report card routes to avoid Puppeteer dependency
-// const reportCardRoutes = require('./routes/reportCardRoutes');
-const clubRoutes = require('./routes/clubs');
-const bookRoutes = require('./routes/books');
-const eventRoutes = require('./routes/events');
-const accountRoutes = require('./routes/accounts');
-const statsRoutes = require('./routes/stats');
-const schoolUserRoutes = require('./routes/schoolUserRoutes');
-const contactRoutes = require('./routes/contact');
-
-// Load environment variables
 dotenv.config();
 
 const app = require('./app');
+const mongoose = require('mongoose');
 
-// Connect to MongoDB and start server
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/SW', {
-}).then(() => {
-  console.log('MongoDB Connected to SW');
-  const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.error('❌ MONGO_URI is not defined. Set it in your environment variables.');
+  process.exit(1);
+}
+
+// Connect to MongoDB Atlas
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => {
+  console.log('✅ MongoDB connected');
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
   });
-}).catch((err) => {
-  console.error('MongoDB connection error:', err);
+})
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err);
+  process.exit(1);
 });
