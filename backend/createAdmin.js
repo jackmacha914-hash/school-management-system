@@ -1,39 +1,43 @@
-require("dotenv").config();
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const User = require("./models/user"); // adjust if path is different
+// createAdmin.js
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const User = require('./models/user'); // adjust path if needed
 
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("✅ Connected to MongoDB"))
-.catch(err => console.error("❌ Connection error:", err));
+dotenv.config();
 
-async function createAdmin() {
-  try {
-    const existing = await User.findOne({ email: "admin@example.com" });
-    if (existing) {
-      console.log("⚠️ Admin already exists");
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.error('❌ MONGO_URI not set in .env');
+  process.exit(1);
+}
+
+mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(async () => {
+    console.log('✅ Connected to MongoDB');
+
+    // Check if an admin already exists
+    const existingAdmin = await User.findOne({ role: 'admin' });
+    if (existingAdmin) {
+      console.log('⚠️ Admin already exists:', existingAdmin.email);
+      mongoose.connection.close();
       return;
     }
 
-    const hashedPassword = await bcrypt.hash("admin123", 10);
-
+    // Create new admin
     const admin = new User({
-      name: "Super Admin",
-      email: "admin@example.com",
-      password: hashedPassword,
-      role: "admin",
+      name: 'Super Admin',
+      email: 'admin@example.com',
+      password: 'AdminPass123', // will be auto-hashed by pre-save hook
+      role: 'admin'
     });
 
     await admin.save();
-    console.log("✅ Admin created successfully");
-  } catch (err) {
-    console.error("❌ Error creating admin:", err);
-  } finally {
-    mongoose.disconnect();
-  }
-}
+    console.log('✅ Admin user created:', admin.email);
 
-createAdmin();
+    mongoose.connection.close();
+  })
+  .catch(err => {
+    console.error('❌ Error creating admin:', err);
+    mongoose.connection.close();
+  });
