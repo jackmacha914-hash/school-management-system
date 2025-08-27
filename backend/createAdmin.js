@@ -1,80 +1,47 @@
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
-const User = require('./models/User');
+const dotenv = require('dotenv');
+const User = require('./models/User'); // adjust path if needed
 
-// Load environment variables
 dotenv.config();
 
-// Configuration
-const ADMIN_CONFIG = {
-  email: 'admin@admin.com',
-  name: 'Admin',
-  password: 'Admin123!', // Change this to a secure password
-  role: 'admin'
-};
-
-// MongoDB connection
-const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://jackmacha914:2qx8aJknHkkKsYeF@school0.ynnxkzv.mongodb.net/SW?retryWrites=true&w=majority';
-
-// Connect to MongoDB
-mongoose.connect(mongoURI, { 
-  useNewUrlParser: true, 
-  useUnifiedTopology: true 
-})
-.then(async () => {
-  console.log('✅ MongoDB Connected');
-  
+async function createAdmin() {
   try {
-    // Check if admin already exists
-    const existingAdmin = await User.findOne({ email: ADMIN_CONFIG.email });
-    
+    // connect to MongoDB
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log("✅ Connected to MongoDB");
+
+    // check if an admin already exists
+    const existingAdmin = await User.findOne({ role: 'admin' });
     if (existingAdmin) {
-      console.log('ℹ️  Admin user already exists:');
-      console.log(`   Email: ${existingAdmin.email}`);
-      console.log(`   Name: ${existingAdmin.name}`);
-      console.log(`   Role: ${existingAdmin.role}`);
-      console.log(`   Created: ${existingAdmin.createdAt}`);
-      console.log('\nTo reset the admin password, delete the existing admin first.');
-      process.exit(0);
+      console.log("⚠️ Admin already exists with email:", existingAdmin.email);
+      return process.exit();
     }
 
-    // Create new admin
-    console.log('Creating new admin user...');
-    
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(ADMIN_CONFIG.password, salt);
+    // create hashed password
+    const hashedPassword = await bcrypt.hash("admin123", 10);
 
-    // Create admin user
+    // create new admin user
     const admin = new User({
-      name: ADMIN_CONFIG.name,
-      email: ADMIN_CONFIG.email,
+      name: "Super Admin",
+      email: "admin@example.com",
       password: hashedPassword,
-      role: ADMIN_CONFIG.role
+      role: "admin"
     });
 
-    // Save to database
     await admin.save();
-    
-    console.log('\n✅ Admin user created successfully!');
-    console.log('==============================');
-    console.log(`Email: ${ADMIN_CONFIG.email}`);
-    console.log(`Password: ${ADMIN_CONFIG.password}`);
-    console.log('==============================');
-    console.log('\n⚠️  IMPORTANT: Change this password after first login!');
-    
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-    if (error.code === 11000) {
-      console.error('Duplicate key error - Admin with this email already exists');
-    }
-  } finally {
-    mongoose.connection.close();
-    process.exit(0);
+    console.log("🎉 Admin user created successfully:");
+    console.log(`   Email: ${admin.email}`);
+    console.log(`   Password: admin123`);
+
+    process.exit();
+  } catch (err) {
+    console.error("❌ Error creating admin:", err);
+    process.exit(1);
   }
-})
-.catch(error => {
-  console.error('❌ MongoDB connection error:', error.message);
-  process.exit(1);
-});
+}
+
+createAdmin();
