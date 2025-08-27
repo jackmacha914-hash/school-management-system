@@ -1,3 +1,5 @@
+import { apiFetch, API_CONFIG } from './config.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Form elements
     const loginForm = document.getElementById('login-form');
@@ -51,9 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const errorMessage = document.getElementById('error-message');
 
             try {
-                const response = await fetch('http://localhost:5000/api/auth/login', {
+                const response = await apiFetch('/api/auth/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
 
@@ -73,16 +74,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Fetch and store full profile
                     try {
-                        const profileEndpoint = data.role === 'teacher' ? 
-                            'http://localhost:5000/api/teachers/profile' : 
-                            'http://localhost:5000/api/students/profile';
+                        const profileEndpoint = data.role === 'teacher' 
+                            ? '/api/teachers/profile' 
+                            : '/api/students/profile';
                             
-                        const profileResponse = await fetch(profileEndpoint, {
-                            headers: {
-                                'Authorization': `Bearer ${data.token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        });
+                        const profileResponse = await apiFetch(profileEndpoint);
 
                         if (profileResponse.ok) {
                             const profileData = await profileResponse.json();
@@ -137,16 +133,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const response = await fetch('http://localhost:5000/api/auth/register', {
+                const response = await apiFetch('/api/auth/register', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         name,
                         email,
                         password,
                         role,
                         studentClass,
-                        studentDob: '', // Add these fields if needed
+                        studentDob: '',
                         studentGender: '',
                         parentName: '',
                         parentEmail: ''
@@ -160,33 +155,3 @@ document.addEventListener('DOMContentLoaded', function() {
                     registerMessage.style.color = 'green';
                     // Clear form
                     registerForm.reset();
-                    // Show login form after successful registration
-                    setTimeout(() => {
-                        registerForm.style.display = 'none';
-                        loginForm.style.display = 'block';
-                        document.getElementById('form-title').textContent = 'Login';
-                        registerMessage.textContent = '';
-                    }, 2000);
-                } else {
-                    registerMessage.textContent = data.msg || 'Registration failed';
-                    registerMessage.style.color = 'red';
-                }
-            } catch (error) {
-                console.error('Registration error:', error);
-                registerMessage.textContent = 'An error occurred. Please try again.';
-                registerMessage.style.color = 'red';
-            }
-        });
-    }
-});
-
-// Function to get dashboard URL based on role
-function getDashboardURL(role) {
-    const dashboards = {
-        admin: 'index.html',
-        teacher: 'teacher.html',
-        student: 'student.html',
-        parent: 'parent-dashboard.html'
-    };
-    return dashboards[role] || 'index.html';
-}
