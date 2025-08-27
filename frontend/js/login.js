@@ -1,5 +1,19 @@
 import { authApi } from './api.js';
 
+// Helper function to get dashboard URL based on user role
+function getDashboardURL(role) {
+    switch (role) {
+        case 'admin':
+            return '/admin/dashboard.html';
+        case 'teacher':
+            return '/teacher/dashboard.html';
+        case 'student':
+            return '/student/dashboard.html';
+        default:
+            return '/login.html'; // fallback
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Form elements
     const loginForm = document.getElementById('login-form');
