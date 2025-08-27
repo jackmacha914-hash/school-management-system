@@ -1,43 +1,34 @@
-// createAdmin.js
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const User = require('./models/user'); // adjust path if needed
-
-dotenv.config();
+const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
+const User = require("./models/user"); // adjust path
 
 const MONGO_URI = process.env.MONGO_URI;
 
-if (!MONGO_URI) {
-  console.error('❌ MONGO_URI not set in .env');
-  process.exit(1);
+async function createAdmin() {
+  await mongoose.connect(MONGO_URI);
+
+  let admin = await User.findOne({ email: "admin@example.com" });
+  if (admin) {
+    console.log("⚠️ Admin already exists:", admin.email);
+    return;
+  }
+
+  const hashedPassword = await bcrypt.hash("Admin123!", 10);
+
+  admin = new User({
+    name: "Admin",
+    email: "admin@example.com",
+    password: hashedPassword,
+    role: "admin",
+  });
+
+  await admin.save();
+  console.log("✅ Admin user created:", admin.email);
+
+  process.exit(0);
 }
 
-mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(async () => {
-    console.log('✅ Connected to MongoDB');
-
-    // Check if an admin already exists
-    const existingAdmin = await User.findOne({ role: 'admin' });
-    if (existingAdmin) {
-      console.log('⚠️ Admin already exists:', existingAdmin.email);
-      mongoose.connection.close();
-      return;
-    }
-
-    // Create new admin
-    const admin = new User({
-      name: 'Super Admin',
-      email: 'admin@example.com',
-      password: 'AdminPass123', // will be auto-hashed by pre-save hook
-      role: 'admin'
-    });
-
-    await admin.save();
-    console.log('✅ Admin user created:', admin.email);
-
-    mongoose.connection.close();
-  })
-  .catch(err => {
-    console.error('❌ Error creating admin:', err);
-    mongoose.connection.close();
-  });
+createAdmin().catch(err => {
+  console.error("❌ Error creating admin:", err);
+  process.exit(1);
+});
