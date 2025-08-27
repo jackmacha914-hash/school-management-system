@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://api.render.com/deploy/srv-d2mmj8bipnbc73f2ega0?key=YOAfkT9DZA4/api';
 
 // Helper function to handle API requests
 async function fetchData(endpoint, options = {}) {
@@ -51,3 +51,26 @@ const dashboardApi = {
 
 // Export the API methods
 export { dashboardApi };
+
+// Authentication API
+const authApi = {
+    login: async (email, password) => {
+        return fetchData('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+    },
+
+    register: async (userData) => {
+        return fetchData('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify(userData)
+        });
+    },
+
+    getProfile: async (role) => {
+        const endpoint = role === 'teacher' ? '/teachers/profile' : '/students/profile';
+        return fetchData(endpoint);
+    }
+};
+
