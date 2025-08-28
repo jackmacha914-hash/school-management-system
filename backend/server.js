@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
@@ -15,7 +16,7 @@ connectDB();
 // Middleware
 app.use(cors());
 
-// ✅ Serve frontend (static files like login.html, login.js, CSS, etc.)
+// Serve frontend (static files like login.html, login.js, CSS, etc.)
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // API Routes
@@ -51,7 +52,7 @@ app.use('/api/users', schoolUserRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/health', healthRoutes);
 
-// ✅ Fallback: if no API route matches, serve frontend index.html (important for login/dashboard)
+// Fallback: if no API route matches, serve frontend index.html (important for login/dashboard)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend', 'login.html'));
 });
