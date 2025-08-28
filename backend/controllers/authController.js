@@ -114,26 +114,76 @@ exports.registerUser = [
 
 // User Login
 exports.loginUser = async (req, res) => {
+    console.log('=== Login Request ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
     const { email, password } = req.body;
+    if (!email || !password) {
+        console.log('Missing email or password');
+        return res.status(400).json({ 
+            success: false,
+            msg: 'Please provide both email and password' 
+        });
+    }
+    
+    console.log('Login attempt for email:', email);
+    
     try {
-        let user = await User.findOne({ email });
+        // Case insensitive email search
+        const user = await User.findOne({ 
+            email: { $regex: new RegExp('^' + email + '$', 'i') } 
+        });
+        
         if (!user) {
-            return res.status(401).json({ msg: "Invalid email or password" });
+            console.log('❌ User not found with email:', email);
+            return res.status(401).json({ 
+                success: false,
+                msg: 'Invalid email or password' 
+            });
         }
+        console.log('User found:', { id: user.id, role: user.role });
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
+            console.log('Password does not match');
             return res.status(401).json({ msg: "Invalid email or password" });
         }
+        console.log('Password matches');
+        console.log('User role:', user.role);
 
         if (!process.env.JWT_SECRET) {
+            console.error('JWT_SECRET is not set');
             return res.status(500).json({ msg: "JWT Secret is missing" });
         }
+        console.log('JWT_SECRET is set');
 
-        const payload =  { id: user.id, role: user.role }; // Ensure consistent payload
+        // Create token payload
+        const payload = { 
+            id: user._id,  // Changed from user.id to user._id for MongoDB
+            role: user.role 
+        };
+        console.log('Token payload:', payload);
+
+        // Generate token
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+        console.log('JWT Token generated');
 
-        res.json({ msg: "Login successful", token, role: user.role }); // Include role in response
+        // Prepare user data (exclude sensitive info)
+        const userData = {
+            id: user._id,
+            email: user.email,
+            role: user.role,
+            name: user.name || ''
+        };
+
+        // Send response
+        res.json({ 
+            success: true,
+            msg: "Login successful", 
+            token, 
+            role: user.role,
+            user: userData
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ msg: "Server error" });

@@ -14,10 +14,38 @@ const app = require('./app');
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:5000',
+    credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Serve frontend (static files like login.html, login.js, CSS, etc.)
+// Serve favicon.ico
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/favicon.ico'), { headers: { 'Content-Type': 'image/x-icon' } });
+});
+
+// Serve static files from frontend directories
 app.use(express.static(path.join(__dirname, '../frontend')));
+app.use('/css', express.static(path.join(__dirname, '../frontend/css')));
+app.use('/js', express.static(path.join(__dirname, '../frontend/js')));
+app.use('/images', express.static(path.join(__dirname, '../frontend/images')));
+
+// Route for the root URL to serve login.html
+app.get(['/', '/login'], (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/pages/login.html'));
+});
+
+// Route for index.html (admin dashboard)
+app.get('/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/pages/index.html'));
+});
+
+// Handle all other HTML routes by serving the login page (client-side routing will handle the rest)
+app.get('*.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/pages/login.html'));
+});
 
 // API Routes
 const authRoutes = require('./routes/authRoutes');
