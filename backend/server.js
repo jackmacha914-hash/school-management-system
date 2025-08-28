@@ -13,11 +13,16 @@ const app = require('./app');
 // Connect to MongoDB
 connectDB();
 
-// Middleware
+// Middleware - Enable CORS for all routes
 app.use(cors({
-    origin: 'http://localhost:5000',
+    origin: '*',  // Allow all origins for now
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
