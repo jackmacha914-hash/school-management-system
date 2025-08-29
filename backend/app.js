@@ -81,5 +81,6 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/marks', marksRoutes);
+app.use('/api/fees', require('./routes/fees'));
 
 module.exports = app;
