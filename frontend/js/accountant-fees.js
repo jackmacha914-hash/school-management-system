@@ -31,7 +31,7 @@ class AccountantFees {
             console.log('Attempting to delete fee with ID:', feeId);
             
             try {
-                const deleteUrl = `http://localhost:5000/api/fees/${feeId}`;
+                const deleteUrl = `https://school-management-system-av07.onrender.com/api/fees/${feeId}`;
                 console.log('Sending DELETE request to:', deleteUrl);
                 
                 const response = await fetch(deleteUrl, {
@@ -186,7 +186,7 @@ class AccountantFees {
             if (classFilter && classFilter !== 'All Classes') params.append('class', classFilter);
             
             // Make API request to get fees with populated student data
-            const apiUrl = `http://localhost:5000/api/fees?${params.toString()}`;
+            const apiUrl = `https://school-management-system-av07.onrender.com/api/fees?${params.toString()}`;
             console.log('Fetching fees from:', apiUrl);
             
             let response;
@@ -656,7 +656,7 @@ class AccountantFees {
                 
                 console.log('Sending payment data:', paymentData);
                 
-                const response = await fetch(`http://localhost:5000/api/fees/${feeId}/payments`, {
+                const response = await fetch(`https://school-management-system-av07.onrender.com/api/fees/${feeId}/payments`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -951,7 +951,7 @@ class AccountantFees {
                 return null;
             }
 
-            const response = await fetch(`http://localhost:5000/api/fees/${feeId}`, {
+            const response = await fetch(`https://school-management-system-av07.onrender.com/api/fees/${feeId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,

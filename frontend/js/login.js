@@ -47,13 +47,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 console.log('Attempting login with:', { email });
-                const response = await fetch('/api/auth/login', {
+                const API_URL = window.API_CONFIG?.AUTH_URL || 'https://school-management-system-av07.onrender.com/api/auth';
+                const response = await fetch(`${API_URL}/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin
                     },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
                 });
                 
                 console.log('Login response status:', response.status);
@@ -158,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const response = await fetch('/api/auth/register', {
+                const response = await fetch(`${window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com/api'}/auth/register`), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

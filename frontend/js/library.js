@@ -165,7 +165,7 @@ async function loadLibraryWithFilters() {
                                 const status = formData.get('status') || 'available';
                                 const copies = parseInt(formData.get('copies')) || 1;
                                 try {
-                                    const res = await fetch(`http://localhost:5000/api/library/${bookId}`, {
+                                    const res = await fetch(`https://school-management-system-av07.onrender.com/api/library/${bookId}`, {
                                         method: 'PUT',
                                         headers: {
                                             'Content-Type': 'application/json',
@@ -993,7 +993,7 @@ if (libraryForm) {
         
         console.log('Sending book data:', bookData);
         try {
-            const res = await fetch('http://localhost:5000/api/library', {
+            const res = await fetch('https://school-management-system-av07.onrender.com/api/library', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1068,7 +1068,7 @@ if (libraryBulkDelete) {
                 const token = localStorage.getItem('token');
                 for (const bookId of selectedBookIds) {
                     try {
-                        await fetch(`http://localhost:5000/api/library/${bookId}`, {
+                        await fetch(`https://school-management-system-av07.onrender.com/api/library/${bookId}`, {
                             method: 'DELETE',
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
@@ -1089,7 +1089,7 @@ if (libraryBulkExport) {
     libraryBulkExport.onclick = async function() {
         if (selectedBookIds.size === 0) return;
         const token = localStorage.getItem('token');
-        let url = 'http://localhost:5000/api/library';
+        let url = 'https://school-management-system-av07.onrender.com/api/library';
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
         const books = await res.json();
         const selected = books.filter(b => selectedBookIds.has(b._id));

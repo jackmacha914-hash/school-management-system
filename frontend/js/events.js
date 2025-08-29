@@ -87,7 +87,7 @@ function buildEventsQueryString(filters) {
 async function loadEventsWithFilters() {
     const token = localStorage.getItem('token');
     const filters = getEventsFilters();
-    let url = 'http://localhost:5000/api/events' + buildEventsQueryString(filters);
+    let url = 'https://school-management-system-av07.onrender.com/api/events' + buildEventsQueryString(filters);
     try {
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
         const events = await res.json();
@@ -143,7 +143,7 @@ async function handleEventFormSubmit(e) {
     const description = document.getElementById('event-description').value;
     const token = localStorage.getItem('token');
     try {
-        const res = await fetch('http://localhost:5000/api/events', {
+        const res = await fetch('https://school-management-system-av07.onrender.com/api/events', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ async function handleEventListClick(e) {
             const date = formData.get('date');
             const description = formData.get('description');
             try {
-                const res = await fetch(`http://localhost:5000/api/events/${eventId}`, {
+                const res = await fetch(`https://school-management-system-av07.onrender.com/api/events/${eventId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ async function handleEventListClick(e) {
         universalConfirmYes.onclick = async () => {
             closeUniversalModal(universalConfirmModal);
             try {
-                const res = await fetch(`http://localhost:5000/api/events/${eventId}`, {
+                const res = await fetch(`https://school-management-system-av07.onrender.com/api/events/${eventId}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -263,7 +263,7 @@ if (eventsBulkDelete) {
             const token = localStorage.getItem('token');
             for (const eventId of selectedEventIds) {
                 try {
-                    await fetch(`http://localhost:5000/api/events/${eventId}`, {
+                    await fetch(`https://school-management-system-av07.onrender.com/api/events/${eventId}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -281,7 +281,7 @@ if (eventsBulkExport) {
     eventsBulkExport.onclick = async function() {
         if (selectedEventIds.size === 0) return;
         const token = localStorage.getItem('token');
-        let url = 'http://localhost:5000/api/events';
+        let url = 'https://school-management-system-av07.onrender.com/api/events';
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
         const events = await res.json();
         const selected = events.filter(e => selectedEventIds.has(e._id));

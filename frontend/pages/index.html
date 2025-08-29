@@ -2937,7 +2937,7 @@
                     password: '***' // Don't log the actual password
                 }, null, 2));
                 
-                const response = await fetch('http://localhost:5000/api/auth/register', {
+                const response = await fetch('https://school-management-system-av07.onrender.com/api/auth/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3273,7 +3273,7 @@
             if (!studentsList) return;
 
             try {
-                const response = await fetch('http://localhost:5000/api/students');
+                const response = await fetch('https://school-management-system-av07.onrender.com/api/students');
                 const data = await response.json();
                 
                 if (!data || !Array.isArray(data.students)) {
@@ -3317,7 +3317,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:5000/api/students/teachers');
+                const response = await fetch('https://school-management-system-av07.onrender.com/api/students/teachers');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -3359,7 +3359,7 @@
         // Delete functions (to be implemented)
         function deleteStudent(studentId) {
             if (confirm('Are you sure you want to delete this student?')) {
-                fetch(`http://localhost:5000/api/students/${studentId}`, {
+                fetch(`https://school-management-system-av07.onrender.com/api/students/${studentId}`, {
                     method: 'DELETE'
                 })
                 .then(() => loadStudents())
@@ -3369,7 +3369,7 @@
 
         function deleteTeacher(teacherId) {
             if (confirm('Are you sure you want to delete this teacher?')) {
-                fetch(`http://localhost:5000/api/students/${teacherId}`, {
+                fetch(`https://school-management-system-av07.onrender.com/api/students/${teacherId}`, {
                     method: 'DELETE'
                 })
                 .then(() => loadTeachers())
@@ -3381,7 +3381,7 @@
         // Load profile data
         async function loadProfile() {
             try {
-                const response = await fetch('http://localhost:5000/api/students/profile');
+                const response = await fetch('https://school-management-system-av07.onrender.com/api/students/profile');
                 const profileData = await response.json();
                 
                 if (profileData && profileData.name) {
@@ -3418,7 +3418,7 @@
     }
 
     try {
-        const response = await fetch('http://localhost:5000/api/students/change-password', {
+        const response = await fetch('https://school-management-system-av07.onrender.com/api/students/change-password', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -3453,7 +3453,7 @@
                 console.log('Fetching attendance for date:', today);
                 
                 // Fetch attendance data for today
-                const response = await fetch(`http://localhost:5000/api/attendance/history?start=${today}&end=${today}`, {
+                const response = await fetch(`https://school-management-system-av07.onrender.com/api/attendance/history?start=${today}&end=${today}`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
@@ -3597,7 +3597,7 @@
                 console.log('   - Using token:', token ? 'Found' : 'Not found');
                 console.log('   - Testing endpoint: /api/attendance/history');
                 
-                const response = await fetch(`http://localhost:5000/api/attendance/history?start=${today}&end=${today}`, {
+                const response = await fetch(`https://school-management-system-av07.onrender.com/api/attendance/history?start=${today}&end=${today}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -3706,7 +3706,7 @@
                 console.log('Sending registration data:', userData);
 
                 // Use the correct registration endpoint
-                const response = await fetch('http://localhost:5000/api/auth/register', {
+                const response = await fetch('https://school-management-system-av07.onrender.com/api/auth/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -3885,10 +3885,22 @@
         </div>
     </div>
 
-    <!-- Library Management Script -->
+    <!-- API Configuration -->
     <script>
-        // Set API configuration before loading the library module
-        window.API_CONFIG = { BASE_URL: 'http://localhost:5000' };
+        // Set API configuration before loading other scripts
+        window.API_CONFIG = { 
+            BASE_URL: 'https://school-management-system-av07.onrender.com',
+            API_BASE_URL: 'https://school-management-system-av07.onrender.com/api',
+            AUTH_URL: 'https://school-management-system-av07.onrender.com/api/auth',
+            STUDENTS_URL: 'https://school-management-system-av07.onrender.com/api/students',
+            TEACHERS_URL: 'https://school-management-system-av07.onrender.com/api/teachers',
+            ATTENDANCE_URL: 'https://school-management-system-av07.onrender.com/api/attendance',
+            FEES_URL: 'https://school-management-system-av07.onrender.com/api/fees',
+            PAYMENTS_URL: 'https://school-management-system-av07.onrender.com/api/payments',
+            CLASSES_URL: 'https://school-management-system-av07.onrender.com/api/classes',
+            CLUBS_URL: 'https://school-management-system-av07.onrender.com/api/clubs',
+            BOOKS_URL: 'https://school-management-system-av07.onrender.com/api/books'
+        };
     </script>
     
     <!-- jQuery (required for Bootstrap modals) -->
@@ -3944,12 +3956,12 @@
                 }
                 
                 console.log('Using class for attendance:', userClass);
-                const url = `http://localhost:5000/api/attendance/history?class=${encodeURIComponent(userClass)}&start=${sevenDaysAgoStr}&end=${todayStr}`;
+                const url = `https://school-management-system-av07.onrender.com/api/attendance/history?class=${encodeURIComponent(userClass)}&start=${sevenDaysAgoStr}&end=${todayStr}`;
                 await fetchAndDisplayAttendance(url);
             } else {
                 console.log('Admin user - fetching all classes first');
                 // First, get the list of all classes
-                const classesResponse = await fetch('http://localhost:5000/api/classes', {
+                const classesResponse = await fetch('https://school-management-system-av07.onrender.com/api/classes', {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
@@ -3982,7 +3994,7 @@
                     
                     try {
                         // Try with the exact class name first
-                        let classResponse = await fetch(`http://localhost:5000/api/attendance/history?class=${encodeURIComponent(className)}&start=${sevenDaysAgoStr}&end=${todayStr}`, {
+                        let classResponse = await fetch(`https://school-management-system-av07.onrender.com/api/attendance/history?class=${encodeURIComponent(className)}&start=${sevenDaysAgoStr}&end=${todayStr}`, {
                             headers: {
                                 'Authorization': `Bearer ${localStorage.getItem('token')}`
                             }
@@ -4013,7 +4025,7 @@
                     
                     for (const className of allClasses) {
                         try {
-                            const response = await fetch(`http://localhost:5000/api/attendance/history?class=${encodeURIComponent(className)}&start=${thirtyDaysAgoStr}&end=${todayStr}`, {
+                            const response = await fetch(`https://school-management-system-av07.onrender.com/api/attendance/history?class=${encodeURIComponent(className)}&start=${thirtyDaysAgoStr}&end=${todayStr}`, {
                                 headers: {
                                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                                 }
@@ -4176,14 +4188,14 @@
             console.log('Fetching fees from API...');
             // Fetch all fees with student population to get expected fees
             const [feesResponse, paymentsResponse] = await Promise.all([
-                fetch('http://localhost:5000/api/fees?populate=student', {
+                fetch('https://school-management-system-av07.onrender.com/api/fees?populate=student', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 }),
                 // Fetch payments data to calculate actual fees paid
-                fetch('http://localhost:5000/api/payments?status=completed', {
+                fetch('https://school-management-system-av07.onrender.com/api/payments?status=completed', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -4318,7 +4330,7 @@
             }
             
             console.log('Fetching fees from API...');
-            const feesResponse = await fetch('http://localhost:5000/api/fees?populate=student', {
+            const feesResponse = await fetch('https://school-management-system-av07.onrender.com/api/fees?populate=student', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -4412,7 +4424,7 @@
             }
             
             console.log('Fetching clubs from API...');
-            const response = await fetch('http://localhost:5000/api/clubs', {
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/clubs', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -4499,7 +4511,7 @@
             }
             
             console.log('Fetching books from API...');
-            const response = await fetch('http://localhost:5000/api/library', {
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/library', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -4686,7 +4698,7 @@
             const token = localStorage.getItem('token');
             if (!token) return;
             
-            const response = await fetch('http://localhost:5000/api/auth/me', {
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/auth/me', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             
@@ -4704,7 +4716,7 @@
     async function loadTotalFees() {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/fees', {
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/fees', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await response.json();
@@ -4729,7 +4741,7 @@
         try {
             const token = localStorage.getItem('token');
             // Try to fetch students from the correct endpoint
-            const response = await fetch('http://localhost:5000/api/students', {
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/students', {
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${token}`,
@@ -4763,7 +4775,7 @@
             }
             
             // First, try to get the count from the server
-            const response = await fetch('http://localhost:5000/api/teachers/count', {
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/teachers/count', {
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${token}`,
@@ -4780,7 +4792,7 @@
             }
             
             // If count endpoint fails, try to fetch all teachers and count them
-            const teachersResponse = await fetch('http://localhost:5000/api/teachers', {
+            const teachersResponse = await fetch('https://school-management-system-av07.onrender.com/api/teachers', {
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${token}`,
@@ -4876,7 +4888,7 @@
             }
             
             console.log('Fetching books from API...');
-            const response = await fetch('http://localhost:5000/api/books', {
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/books', {
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${token}`,
@@ -5033,7 +5045,7 @@
             document.getElementById('attendance-date').textContent = `Today • ${today.toLocaleDateString('en-US', options)}`;
             
             // Try to get today's attendance
-            const response = await fetch(`http://localhost:5000/api/attendance?date=${todayFormatted}`, {
+            const response = await fetch(`https://school-management-system-av07.onrender.com/api/attendance?date=${todayFormatted}`, {
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${token}`,
@@ -5141,7 +5153,7 @@
             const token = localStorage.getItem('token');
             if (!token) return;
             
-            const response = await fetch('http://localhost:5000/api/fees/summary', {
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/fees/summary', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             
@@ -5181,7 +5193,7 @@
             if (!token) return;
             
             const today = new Date().toISOString().split('T')[0];
-            const response = await fetch(`http://localhost:5000/api/attendance/summary?date=${today}`, {
+            const response = await fetch(`https://school-management-system-av07.onrender.com/api/attendance/summary?date=${today}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             
@@ -5328,7 +5340,7 @@
                         throw new Error('No authentication token found');
                     }
                     
-                    const response = await fetch(`http://localhost:5000/api/students/class/${encodeURIComponent(className)}`, {
+                    const response = await fetch(`https://school-management-system-av07.onrender.com/api/students/class/${encodeURIComponent(className)}`, {
                         method: 'GET',
                         headers: {
                             'Authorization': `Bearer ${token}`,

@@ -111,7 +111,7 @@ async function handleClassChange(event) {
     try {
         // Try to fetch students from the API
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/students/class/${encodeURIComponent(className)}`, {
+        const response = await fetch(`https://school-management-system-av07.onrender.com/api/students/class/${encodeURIComponent(className)}`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -544,7 +544,7 @@ function initializeFeeForm() {
             console.log('Submitting form data:', formData);
             const token = localStorage.getItem('token');
             console.log('Sending request to server with data:', formData);
-            const response = await fetch('http://localhost:5000/api/fees', {
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/fees', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -723,7 +723,7 @@ async function loadFeeRecords() {
         }
 
         console.log('Fetching fee records from API...');
-        const response = await fetch('http://localhost:5000/api/fees', {
+        const response = await fetch('https://school-management-system-av07.onrender.com/api/fees', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -1056,7 +1056,7 @@ async function loadFeeRecords() {
         
         // Get the current URL and API endpoint for debugging
         const currentUrl = window.location.href;
-        const apiUrl = 'http://localhost:5000/api/fees';
+        const apiUrl = 'https://school-management-system-av07.onrender.com/api/fees';
         const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         
         // Create error details for debugging
@@ -1111,7 +1111,7 @@ async function loadFeeRecords() {
                                 <i class="fas fa-sync-alt mr-2"></i> Try Again
                             </button>
                             ${isLocalhost ? `
-                            <a href="http://localhost:5000/api/fees" target="_blank" class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <a href="https://school-management-system-av07.onrender.com/api/fees" target="_blank" class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 <i class="fas fa-external-link-alt mr-2"></i> Test API Endpoint
                             </a>
                             ` : ''}
@@ -1171,7 +1171,7 @@ function printReceipt(feeId, event) {
     console.log('Fetching fee details for ID:', feeId);
     
     // Fetch the fee details
-    fetch(`http://localhost:5000/api/fees/${feeId}`, {
+    fetch(`https://school-management-system-av07.onrender.com/api/fees/${feeId}`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`,

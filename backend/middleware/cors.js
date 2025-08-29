@@ -11,8 +11,17 @@ const corsMiddleware = (req, res, next) => {
     // Always set Vary header to avoid caching CORS responses
     res.header('Vary', 'Origin');
     
-    // Check if the request origin is in the allowed origins
-    if (origin && allowedOrigins.includes(origin)) {
+    // Check if the request origin matches any allowed origin pattern
+    const isOriginAllowed = origin && allowedOrigins.some(allowedOrigin => {
+        if (typeof allowedOrigin === 'string') {
+            return allowedOrigin === origin;
+        } else if (allowedOrigin instanceof RegExp) {
+            return allowedOrigin.test(origin);
+        }
+        return false;
+    });
+    
+    if (isOriginAllowed) {
         // For requests with credentials, we must specify the exact origin
         res.header('Access-Control-Allow-Origin', origin);
         res.header('Access-Control-Allow-Credentials', 'true');
