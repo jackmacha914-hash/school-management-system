@@ -89,7 +89,7 @@ class StudentReportCards {
             console.log('Selected term and year:', { term, academicYear });
 
             // Fetch student marks from the API with term and academic year
-            const apiUrl = `http://localhost:5000/api/marks/student/${studentId}?term=${encodeURIComponent(term)}&academicYear=${encodeURIComponent(academicYear)}`;
+            const apiUrl = `https://school-management-system-av07.onrender.com/api/marks/student/${studentId}?term=${encodeURIComponent(term)}&academicYear=${encodeURIComponent(academicYear)}`;
             console.log('Fetching student marks from:', apiUrl);
             
             const response = await fetch(apiUrl, {

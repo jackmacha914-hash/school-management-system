@@ -1,5 +1,5 @@
 // API configuration and utility functions
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://school-management-system-av07.onrender.com/api';
 
 // Helper function to handle API requests
 async function apiRequest(endpoint, options = {}) {

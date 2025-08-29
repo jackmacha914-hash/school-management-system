@@ -1,6 +1,6 @@
 // Library Management Logic
 // API configuration will be set from the HTML file
-const API_CONFIG = window.API_CONFIG || { BASE_URL: 'http://localhost:5000' };
+const API_CONFIG = window.API_CONFIG || { BASE_URL: 'https://school-management-system-av07.onrender.com' };
 
 // DOM Elements
 const libraryForm = document.getElementById('library-form');

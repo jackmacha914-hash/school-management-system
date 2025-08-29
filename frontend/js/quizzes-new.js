@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to update user data from the server
     async function updateUserData() {
-        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000';
+        const API_BASE_URL = window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com';
         const token = localStorage.getItem('token');
         
         if (!token) {
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to load quizzes for teachers
     async function loadTeacherQuizzes() {
-        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000';
+        const API_BASE_URL = window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com';
         const token = localStorage.getItem('token');
         
         const response = await fetch(`${API_BASE_URL}/api/quizzes/teacher`, {
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to load quizzes for students
     async function loadStudentQuizzes(userClass) {
-        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000';
+        const API_BASE_URL = window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com';
         const token = localStorage.getItem('token');
         
         try {

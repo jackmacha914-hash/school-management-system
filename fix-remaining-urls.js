@@ -4,7 +4,7 @@ const path = require('path');
 const FRONTEND_DIR = path.join(__dirname, 'frontend');
 const PROD_URL = 'https://school-management-system-av07.onrender.com';
 
-// Find all JavaScript, HTML, and JSX files in the frontend directory
+// Find all JavaScript and HTML files in the frontend directory
 function findFrontendFiles(dir, fileList = []) {
     const files = fs.readdirSync(dir);
     
@@ -13,7 +13,6 @@ function findFrontendFiles(dir, fileList = []) {
         const stat = fs.statSync(filePath);
         
         if (stat.isDirectory()) {
-            // Skip node_modules and other directories
             if (!['node_modules', '.git', 'dist', 'build'].includes(file)) {
                 findFrontendFiles(filePath, fileList);
             }
@@ -40,38 +39,31 @@ function updateFile(filePath) {
         const originalContent = content;
         let changesMade = false;
 
-        // Pattern 1: http://localhost:5000/api
-        const pattern1 = /http:\/\/localhost:5000\/api/g;
+        // Pattern 1: const API_BASE_URL = 'http://localhost:5000';
+        const pattern1 = /(const|let|var)\s+API_BASE_URL\s*=\s*['"]http:\/\/localhost:5000['"]/g;
         if (pattern1.test(content)) {
-            content = content.replace(pattern1, `${PROD_URL}/api`);
+            content = content.replace(pattern1, `const API_BASE_URL = '${PROD_URL}'`);
             changesMade = true;
         }
 
-        // Pattern 2: http://localhost:PORT/api (any port)
-        const pattern2 = /http:\/\/localhost:\d+\/api/g;
+        // Pattern 2: window.API_BASE_URL = 'http://localhost:5000';
+        const pattern2 = /window\.API_BASE_URL\s*=\s*['"]http:\/\/localhost:5000['"]/g;
         if (pattern2.test(content)) {
-            content = content.replace(pattern2, `${PROD_URL}/api`);
+            content = content.replace(pattern2, `window.API_BASE_URL = '${PROD_URL}'`);
             changesMade = true;
         }
 
-        // Pattern 3: 'http://localhost:PORT/api' (in quotes)
-        const pattern3 = /['"]http:\/\/localhost:\d+\/api['"]/g;
+        // Pattern 3: 'http://localhost:5000/uploads/...'
+        const pattern3 = /['"]http:\/\/localhost:5000\/uploads\/([^'"\s]+)['"]/g;
         if (pattern3.test(content)) {
-            content = content.replace(pattern3, `'${PROD_URL}/api'`);
+            content = content.replace(pattern3, `'${PROD_URL}/uploads/$1'`);
             changesMade = true;
         }
 
-        // Pattern 4: fetch('http://localhost:PORT/...')
-        const pattern4 = /fetch\(['"]http:\/\/localhost:\d+\/api(\/[^'"]*)['"]/g;
+        // Pattern 4: `http://localhost:5000/api/...` (template literals)
+        const pattern4 = /`http:\/\/localhost:5000\/api\/([^`]+)`/g;
         if (pattern4.test(content)) {
-            content = content.replace(pattern4, `fetch(\`\${window.API_CONFIG?.API_BASE_URL || '${PROD_URL}/api'}$1\``);
-            changesMade = true;
-        }
-
-        // Pattern 5: axios.get('http://localhost:PORT/...')
-        const pattern5 = /axios\.(get|post|put|delete|patch)\(['"]http:\/\/localhost:\d+\/api(\/[^'"]*)['"]/g;
-        if (pattern5.test(content)) {
-            content = content.replace(pattern5, `axios.$1(\`\${window.API_CONFIG?.API_BASE_URL || '${PROD_URL}/api'}$2\``);
+            content = content.replace(pattern4, `\`\${window.API_CONFIG?.API_BASE_URL || '${PROD_URL}/api'}/$1\``);
             changesMade = true;
         }
 
@@ -95,7 +87,7 @@ function updateFile(filePath) {
 }
 
 async function runUpdates() {
-    console.log('🚀 Updating API URLs in frontend files...\n');
+    console.log('🚀 Updating remaining hardcoded URLs in frontend files...\n');
     
     let updatedCount = 0;
     let errorCount = 0;

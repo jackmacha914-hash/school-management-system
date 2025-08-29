@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     // Send the file to the server
-                    const response = await fetch('http://localhost:5000/api/assignments/submit', {
+                    const response = await fetch('https://school-management-system-av07.onrender.com/api/assignments/submit', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`

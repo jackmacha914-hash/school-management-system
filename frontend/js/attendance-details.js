@@ -123,7 +123,7 @@ class AttendanceDetails {
                 return;
             }
 
-            const baseUrl = 'http://localhost:5000';
+            const baseUrl = 'https://school-management-system-av07.onrender.com';
             const response = await fetch(`${baseUrl}/api/attendance/${this.attendanceId}`, {
                 method: 'GET',
                 headers: {

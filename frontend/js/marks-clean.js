@@ -1,5 +1,5 @@
 // API base URL
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'https://school-management-system-av07.onrender.com';
 
 // Global variables
 let marksModal, classSelect, marksContainer, generateReportBtn, saveMarksBtn, cancelMarksBtn, 

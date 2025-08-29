@@ -1057,7 +1057,7 @@ async function loadFeeRecords() {
         // Get the current URL and API endpoint for debugging
         const currentUrl = window.location.href;
         const apiUrl = 'https://school-management-system-av07.onrender.com/api/fees';
-        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const isLocalhost = false; // Local development check disabled for production
         
         // Create error details for debugging
         let errorDetails = `Error: ${error.message || 'Unknown error'}\n`;
@@ -1077,11 +1077,7 @@ async function loadFeeRecords() {
         let userMessage = 'Failed to load fee records. ';
         if (error.message && error.message.includes('Failed to fetch')) {
             userMessage += 'Unable to connect to the server. ';
-            if (isLocalhost) {
-                userMessage += 'Please make sure the backend server is running at http://localhost:5000';
-            } else {
-                userMessage += 'Please check your internet connection and try again.';
-            }
+            userMessage += 'Please check your internet connection and try again.';
         } else {
             userMessage += error.message || 'Please try again later.';
         }
@@ -1099,22 +1095,13 @@ async function loadFeeRecords() {
                         <h3 class="text-lg font-medium text-red-800">Unable to Load Fee Records</h3>
                         <div class="mt-2 text-sm text-red-700 space-y-2">
                             <p>${userMessage}</p>
-                            ${isLocalhost ? `
-                            <details class="mt-3 text-xs bg-red-100 p-2 rounded">
-                                <summary class="font-medium cursor-pointer">Technical Details</summary>
-                                <pre class="mt-2 whitespace-pre-wrap font-mono">${errorDetails}</pre>
-                            </details>
-                            ` : ''}
+                            
                         </div>
                         <div class="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                             <button onclick="loadFeeRecords()" class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                                 <i class="fas fa-sync-alt mr-2"></i> Try Again
                             </button>
-                            ${isLocalhost ? `
-                            <a href="https://school-management-system-av07.onrender.com/api/fees" target="_blank" class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                <i class="fas fa-external-link-alt mr-2"></i> Test API Endpoint
-                            </a>
-                            ` : ''}
+                            
                             <button onclick="window.location.href='accountant.html?tab=fee-entry'" class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 <i class="fas fa-plus-circle mr-2"></i> Add New Payment
                             </button>

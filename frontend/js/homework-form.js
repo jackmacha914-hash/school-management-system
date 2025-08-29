@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       console.log('Submitting form to server...');
       
-      const response = await fetch('http://localhost:5000/api/homeworks', {
+      const response = await fetch('https://school-management-system-av07.onrender.com/api/homeworks', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

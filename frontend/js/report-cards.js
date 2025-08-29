@@ -1,6 +1,6 @@
 // API base URL - update this to your actual API URL
 if (typeof API_BASE_URL === 'undefined') {
-    window.API_BASE_URL = 'http://localhost:5000';
+    window.API_BASE_URL = 'https://school-management-system-av07.onrender.com';
 }
 
 // Function to show alert messages

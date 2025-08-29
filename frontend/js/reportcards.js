@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('Fetching report cards for student:', studentId);
       
       // Fetch report cards from the API
-      const apiUrl = `http://localhost:5000/api/report-cards/student/${studentId}`;
+      const apiUrl = `https://school-management-system-av07.onrender.com/api/report-cards/student/${studentId}`;
       console.log('Fetching from URL:', apiUrl);
       
       const response = await fetch(apiUrl, {

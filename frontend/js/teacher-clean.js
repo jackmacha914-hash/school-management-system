@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error('No token found. Please log in again!');
         }
         
-        const response = await fetch('http://localhost:5000/api/assignments', {
+        const response = await fetch('https://school-management-system-av07.onrender.com/api/assignments', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
           formData.append('file', fileInput.files[0]);
         }
         
-        const response = await fetch('http://localhost:5000/api/assignments', {
+        const response = await fetch('https://school-management-system-av07.onrender.com/api/assignments', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No token found. Please log in again!');
         
-        const response = await fetch(`http://localhost:5000/api/assignments/${assignmentId}`, {
+        const response = await fetch(`https://school-management-system-av07.onrender.com/api/assignments/${assignmentId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -497,7 +497,7 @@ function loadStudentsForGradeDropdown() {
   if (!studentSelect) return;
   
   const token = localStorage.getItem('token');
-  const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://school-management-system-av07.onrender.com';
   
   fetch(`${API_BASE_URL}/api/students`, {
     method: 'GET',

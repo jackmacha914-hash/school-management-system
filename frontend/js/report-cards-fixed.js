@@ -1,6 +1,6 @@
 // Global variables
 let isClearingMarks = false;
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://school-management-system-av07.onrender.com';
 
 // Report Cards functionality for teacher dashboard
 document.addEventListener('DOMContentLoaded', function() {

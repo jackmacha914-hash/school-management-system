@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const quizzesList = document.getElementById('quizzesList');
-    const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000';
+    const API_BASE_URL = window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com';
 
     // Load quizzes when the page loads
     loadQuizzes();

@@ -287,7 +287,7 @@ async function loadUsersWithFilters() {
         }
         
         // First try the new API endpoint
-        let apiUrl = `http://localhost:5000/api/users?${queryString}`;
+        let apiUrl = `https://school-management-system-av07.onrender.com/api/users?${queryString}`;
         console.log('Fetching users from:', apiUrl);
         
         let response;
@@ -303,7 +303,7 @@ async function loadUsersWithFilters() {
         } catch (networkError) {
             console.error('Network error:', networkError);
             // Try fallback endpoint if first attempt fails
-            apiUrl = `http://localhost:8000/api/users?${queryString}`;
+            apiUrl = `https://school-management-system-av07.onrender.com/api/users?${queryString}`;
             console.log('Trying fallback endpoint:', apiUrl);
             response = await fetch(apiUrl, {
                 headers: {
@@ -527,8 +527,8 @@ if (elements.userExportBtn) {
             const baseUrl = window.location.origin;
             const endpoints = [
                 `${baseUrl}/api/users`,
-                'http://localhost:5000/api/users',
-                'http://localhost:8000/api/users'
+                'https://school-management-system-av07.onrender.com/api/users',
+                'https://school-management-system-av07.onrender.com/api/users'
             ];
             
             let users = [];
@@ -593,7 +593,7 @@ if (usersBulkDelete) {
             const token = localStorage.getItem('token');
             for (const userId of selectedUserIds) {
                 try {
-                    await fetch(`http://localhost:5000/api/users/${userId}`, {
+                    await fetch(`https://school-management-system-av07.onrender.com/api/users/${userId}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -611,7 +611,7 @@ if (usersBulkExport) {
     usersBulkExport.onclick = async function() {
         if (selectedUserIds.size === 0) return;
         const token = localStorage.getItem('token');
-        let url = 'http://localhost:5000/api/users';
+        let url = 'https://school-management-system-av07.onrender.com/api/users';
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
         const users = await res.json();
         const selected = users.filter(u => selectedUserIds.has(u._id));
@@ -696,12 +696,12 @@ async function getUserById(userId) {
         // Try the primary endpoint first
         `${baseUrl}/api/users/${userId}`,
         // Fallback to other possible endpoints
-        `http://localhost:5000/api/users/${userId}`,
-        `http://localhost:8000/api/users/${userId}`,
+        `https://school-management-system-av07.onrender.com/api/users/${userId}`,
+        `https://school-management-system-av07.onrender.com/api/users/${userId}`,
         // Keep these as last resort in case the backend changes
         `${baseUrl}/api/school-users/${userId}`,
-        `http://localhost:5000/api/school-users/${userId}`,
-        `http://localhost:8000/api/school-users/${userId}`
+        `https://school-management-system-av07.onrender.com/api/school-users/${userId}`,
+        `https://school-management-system-av07.onrender.com/api/school-users/${userId}`
     ];
     
     for (const endpoint of endpoints) {
@@ -958,12 +958,12 @@ async function handleDeleteUser(userId) {
             // Try the primary endpoint first
             `${baseUrl}/api/users/${userId}`,
             // Fallback to other possible endpoints
-            `http://localhost:5000/api/users/${userId}`,
-            `http://localhost:8000/api/users/${userId}`,
+            `https://school-management-system-av07.onrender.com/api/users/${userId}`,
+            `https://school-management-system-av07.onrender.com/api/users/${userId}`,
             // Keep these as last resort in case the backend changes
             `${baseUrl}/api/school-users/${userId}`,
-            `http://localhost:5000/api/school-users/${userId}`,
-            `http://localhost:8000/api/school-users/${userId}`
+            `https://school-management-system-av07.onrender.com/api/school-users/${userId}`,
+            `https://school-management-system-av07.onrender.com/api/school-users/${userId}`
         ];
         
         let lastError = null;
@@ -1251,8 +1251,8 @@ async function handleEditUser(e) {
         const baseUrl = window.location.origin;
         const endpoints = [
             `${baseUrl}/api/users/${userId}`,
-            `http://localhost:5000/api/users/${userId}`,
-            `http://localhost:8000/api/users/${userId}`
+            `https://school-management-system-av07.onrender.com/api/users/${userId}`,
+            `https://school-management-system-av07.onrender.com/api/users/${userId}`
         ];
         
         let response;

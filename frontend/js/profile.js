@@ -101,7 +101,7 @@ async function fetchFreshProfile(token) {
     // Use the appropriate endpoint based on the user's role
     const profileEndpoint = `/api/students/profile`;
     
-    const response = await fetch(`http://localhost:5000${profileEndpoint}`, {
+    const response = await fetch(`${window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com'}${profileEndpoint}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -174,9 +174,9 @@ function populateProfileForm(profile) {
     if (photoUrl) {
       console.log('Original photo URL:', photoUrl);
       
-      // Clean up any existing localhost:8000 URLs
-      if (photoUrl.includes('localhost:8000')) {
-        photoUrl = photoUrl.replace('http://localhost:8000', API_CONFIG.BASE_URL);
+      // Clean up any existing localhost URLs
+      if (photoUrl && photoUrl.includes('localhost')) {
+        photoUrl = photoUrl.replace(/^http:\/\/localhost(:\d+)?/, window.API_CONFIG?.BASE_URL || 'https://school-management-system-av07.onrender.com');
       }
       
       // Use our helper function to get the correct URL
@@ -310,7 +310,7 @@ async function updateProfile() {
   };
 
   try {
-    const response = await fetch("http://localhost:5000/api/profile", {
+    const response = await fetch("https://school-management-system-av07.onrender.com/api/profile", {
       method: "PUT",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -380,7 +380,7 @@ async function handlePhotoUpload(event) {
   formData.append('photo', file);
 
   try {
-    const response = await fetch('http://localhost:5000/api/students/profile/photo', {
+    const response = await fetch('https://school-management-system-av07.onrender.com/api/students/profile/photo', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -419,9 +419,9 @@ async function handlePhotoUpload(event) {
         if ((!photoUrl || photoUrl === '') && data.profile?.photo) {
           // If it's a relative path, prepend the base URL
           if (data.profile.photo.startsWith('/')) {
-            photoUrl = `http://localhost:5000${data.profile.photo}`;
+            photoUrl = `${window.API_CONFIG?.BASE_URL || 'https://school-management-system-av07.onrender.com'}${data.profile.photo}`;
           } else if (!data.profile.photo.startsWith('http')) {
-            photoUrl = `http://localhost:5000/uploads/${data.profile.photo}`;
+            photoUrl = `${window.API_CONFIG?.BASE_URL || 'https://school-management-system-av07.onrender.com'}/uploads/${data.profile.photo}`;
           } else {
             photoUrl = data.profile.photo;
           }
@@ -497,7 +497,7 @@ async function changePassword() {
   }
 
   try {
-    const response = await fetch("http://localhost:5000/api/profile/change-password", {
+    const response = await fetch("https://school-management-system-av07.onrender.com/api/profile/change-password", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,

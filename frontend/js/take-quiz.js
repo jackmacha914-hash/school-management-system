@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com';
 
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -1485,11 +1485,7 @@ function showQuestion(index) {
     // Initialize modal when DOM is loaded
     initModal();
     
-    // Add debug button and run initial debug
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        addDebugButton();
-        debugDOM();
-        // Also run debug after a short delay to catch any dynamic content
+    // Debug functionality disabled in production
         setTimeout(debugDOM, 1000);
     }
 });

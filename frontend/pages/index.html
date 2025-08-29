@@ -1172,7 +1172,7 @@
             </li>
             <li class="tab-link" data-tab="role-management-section">Role Management</li>
             <li class="tab-link" data-tab="quizzes-section" onclick="window.location.href='quizzes.html'">Quizzes</li>
-            <li class="tab-link" data-tab="logout-section" onclick="window.location.href='http://localhost:8000/pages/login'">Logout</li>
+            <li class="tab-link" data-tab="logout-section" onclick="window.location.href='/pages/login'">Logout</li>
         </ul>
     </aside>
 
@@ -4830,7 +4830,7 @@
             
             for (const endpoint of endpoints) {
                 try {
-                    const url = `http://localhost:5000${endpoint}`;
+                    const url = `https://school-management-system-av07.onrender.com${endpoint}`;
                     console.log(`Trying endpoint: ${url}`);
                     
                     const response = await fetch(url, {

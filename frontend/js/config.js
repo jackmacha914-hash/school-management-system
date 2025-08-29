@@ -23,7 +23,7 @@ export function getResourceUrl(path) {
 
     // If it's already a full URL, return as is
     if (path.startsWith('http')) {
-        return path.replace('http://localhost:8000', API_CONFIG.BASE_URL);
+        return path.replace(/^http:\/\/localhost(:\d+)?/, window.API_CONFIG?.BASE_URL || 'https://school-management-system-av07.onrender.com');
     }
 
     if (path.startsWith('data:')) {
@@ -40,18 +40,43 @@ export function getResourceUrl(path) {
     return `${API_CONFIG.BASE_URL}/uploads/profile-photos/${cleanPath}`;
 }
 
-// ✅ NEW: Wrapper for API requests
+// ✅ Wrapper for API requests with proper error handling
 export async function apiFetch(endpoint, options = {}) {
     const token = localStorage.getItem("token");
+    const url = endpoint.startsWith('http') ? endpoint : `${API_CONFIG.API_BASE_URL}${endpoint}`;
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...(options.headers || {})
+    };
 
-    const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+    const config = {
         ...options,
-        headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            ...options.headers,
-        },
-    });
+        headers,
+        credentials: 'include'  // Important for cookies and auth
+    };
 
-    return response;
+    try {
+        const response = await fetch(url, config);
+        
+        // Handle non-2xx responses
+        if (!response.ok) {
+            const error = new Error(`HTTP error! status: ${response.status}`);
+            error.status = response.status;
+            error.response = response;
+            throw error;
+        }
+        
+        // Try to parse JSON, but handle non-JSON responses
+        try {
+            return await response.json();
+        } catch (e) {
+            return response.text();
+        }
+    } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
+    }
 }
