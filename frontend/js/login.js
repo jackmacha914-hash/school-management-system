@@ -176,10 +176,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     })
                 });
                 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    console.error('Failed to parse response:', e);
+                    throw new Error('Invalid response from server');
+                }
                 
                 if (!response.ok) {
-                    throw new Error(data.message || 'Registration failed');
+                    throw new Error(data.message || data.msg || 'Registration failed');
                 }
                 
                 // Show success message

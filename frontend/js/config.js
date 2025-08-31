@@ -17,12 +17,13 @@ API_CONFIG.CLUBS_URL = 'https://school-management-system-av07.onrender.com/api/c
 API_CONFIG.BOOKS_URL = 'https://school-management-system-av07.onrender.com/api/books';
 
 // Helper function to get the full URL for a resource
-export function getResourceUrl(path) {
+function getResourceUrl(path) {
     if (!path) return '';
 
     // If it's already a full URL, return as is
     if (path.startsWith('http')) {
-        return path.replace(/^http:\/\/localhost(:\d+)?/, window.API_CONFIG?.BASE_URL || 'https://school-management-system-av07.onrender.com');
+        return path.replace(/^http:\/\/localhost(:\d+)?/, 
+            (window.API_CONFIG || API_CONFIG || {}).BASE_URL || 'https://school-management-system-av07.onrender.com');
     }
 
     if (path.startsWith('data:')) {
