@@ -168,10 +168,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        name,
-                        email,
-                        password,
-                        role,
+                        name: name,
+                        email: email,
+                        password: password,
+                        role: role,
                         studentClass: role === 'student' ? studentClass : undefined
                     })
                 });
