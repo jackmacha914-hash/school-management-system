@@ -1,46 +1,16 @@
 // API Configuration
 var API_CONFIG = {
     BASE_URL: 'https://school-management-system-av07.onrender.com',
-    UPLOADS_PATH: '/uploads',
-    PROFILE_PHOTOS_PATH: '/uploads/profile-photos',
-    RESOURCES_PATH: '/uploads/resources',
     API_BASE_URL: 'https://school-management-system-av07.onrender.com/api',
     AUTH_URL: 'https://school-management-system-av07.onrender.com/api/auth',
-    STUDENTS_URL: 'https://school-management-system-av07.onrender.com/api/students',
-    TEACHERS_URL: 'https://school-management-system-av07.onrender.com/api/teachers',
-    ATTENDANCE_URL: 'https://school-management-system-av07.onrender.com/api/attendance',
-    FEES_URL: 'https://school-management-system-av07.onrender.com/api/fees',
     PAYMENTS_URL: 'https://school-management-system-av07.onrender.com/api/payments',
     CLASSES_URL: 'https://school-management-system-av07.onrender.com/api/classes',
     CLUBS_URL: 'https://school-management-system-av07.onrender.com/api/clubs',
     BOOKS_URL: 'https://school-management-system-av07.onrender.com/api/books'
 };
-API_CONFIG.PAYMENTS_URL = 'https://school-management-system-av07.onrender.com/api/payments';
-API_CONFIG.CLASSES_URL = 'https://school-management-system-av07.onrender.com/api/classes';
-API_CONFIG.CLUBS_URL = 'https://school-management-system-av07.onrender.com/api/clubs';
-API_CONFIG.BOOKS_URL = 'https://school-management-system-av07.onrender.com/api/books';
 
 // Make it available globally
 window.API_CONFIG = API_CONFIG;
-
-// Helper function to get the full URL for a resource
-function getResourceUrl(path) {
-    if (!path) return '';
-
-    // If it's already a full URL, return as is
-    if (path.startsWith('http')) {
-        return path.replace(/^http:\/\/localhost(:\d+)?/, 
-            (window.API_CONFIG || {}).BASE_URL || 'https://school-management-system-av07.onrender.com');
-    }
-
-    if (path.startsWith('data:')) {
-        return path;
-    }
-
-    let cleanPath = path.replace(/^\/+/g, '');
-    cleanPath = cleanPath.replace(/^uploads\//, '');
-
-    if (cleanPath.includes('profile-photos/')) {
         return `${API_CONFIG.BASE_URL}/${cleanPath}`;
     }
 

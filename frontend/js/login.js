@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const API_BASE_URL = 'https://school-management-system-av07.onrender.com/api';
+                const API_BASE_URL = window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com/api';
                 const response = await fetch(`${API_BASE_URL}/auth/register`, {
                     method: 'POST',
                     headers: {
