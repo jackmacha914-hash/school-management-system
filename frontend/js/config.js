@@ -44,7 +44,7 @@ function getResourceUrl(path) {
 }
 
 // ✅ Wrapper for API requests with proper error handling
-export async function apiFetch(endpoint, options = {}) {
+async function apiFetch(endpoint, options = {}) {
     const token = localStorage.getItem("token");
     const url = endpoint.startsWith('http') ? endpoint : `${API_CONFIG.API_BASE_URL}${endpoint}`;
     

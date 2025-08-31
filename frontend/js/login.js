@@ -60,29 +60,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 console.log('Login response status:', response.status);
-                const data = await response.json().catch(() => ({}));
-                console.log('Login response data:', data);
+                let responseData = {};
+                try {
+                    responseData = await response.json();
+                    console.log('Login response data:', responseData);
+                } catch (e) {
+                    console.error('Failed to parse login response:', e);
+                    throw new Error('Invalid response from server');
+                }
                 
                 if (!response.ok) {
-                    const errorMsg = data.msg || data.message || 'Login failed';
+                    const errorMsg = responseData.msg || responseData.message || 'Login failed';
                     console.error('Login failed:', errorMsg);
                     throw new Error(errorMsg);
                 }
                 
                 // Save token and user data
-                if (data.token) {
+                if (responseData.token) {
                     console.log('Login successful, saving token and user data');
-                    localStorage.setItem('token', data.token);
-                    if (data.user) {
-                        localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('token', responseData.token);
+                    if (responseData.user) {
+                        localStorage.setItem('user', JSON.stringify(responseData.user));
                     }
                     
                     // Redirect based on user role
-                    const role = data.user?.role || 'student';
+                    const role = responseData.user?.role || 'student';
                     console.log('Redirecting to dashboard for role:', role);
                     window.location.href = getDashboardURL(role);
                 } else {
-                    console.error('No token in response:', data);
+                    console.error('No token in response:', responseData);
                     throw new Error('No authentication token received');
                 }
                 
