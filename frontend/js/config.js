@@ -1,5 +1,5 @@
 // API Configuration
-export const API_CONFIG = {
+window.API_CONFIG = {
     BASE_URL: 'https://school-management-system-av07.onrender.com',
     UPLOADS_PATH: '/uploads',
     PROFILE_PHOTOS_PATH: '/uploads/profile-photos',

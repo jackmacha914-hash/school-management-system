@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const response = await fetch(`${window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com/api'}/auth/register`), {
+                const response = await fetch(`${window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com/api'}/auth/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
