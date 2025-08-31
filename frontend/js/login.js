@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 console.log('Attempting login with:', { email });
-                const API_URL = window.API_CONFIG?.AUTH_URL || 'https://school-management-system-av07.onrender.com/api/auth';
+                const API_URL = (window.API_CONFIG || API_CONFIG || {}).AUTH_URL || 'https://school-management-system-av07.onrender.com/api/auth';
                 const response = await fetch(`${API_URL}/login`, {
                     method: 'POST',
                     headers: {
@@ -161,7 +161,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const response = await fetch(`${window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com/api'}/auth/register`, {
+                const API_BASE_URL = (window.API_CONFIG || API_CONFIG || {}).API_BASE_URL || 'https://school-management-system-av07.onrender.com/api';
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
