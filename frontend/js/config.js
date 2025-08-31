@@ -11,13 +11,21 @@ var API_CONFIG = {
 
 // Make it available globally
 window.API_CONFIG = API_CONFIG;
-        return `${API_CONFIG.BASE_URL}/${cleanPath}`;
-    }
 
-    return `${API_CONFIG.BASE_URL}/uploads/profile-photos/${cleanPath}`;
+// Helper function to get resource URL
+function getResourceUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    if (path.startsWith('data:')) return path;
+    
+    const cleanPath = path.replace(/^\/|^uploads\//g, '');
+    if (path.includes('profile-photos/')) {
+        return `${API_CONFIG.BASE_URL}/uploads/profile-photos/${cleanPath}`;
+    }
+    return `${API_CONFIG.BASE_URL}/uploads/${cleanPath}`;
 }
 
-// ✅ Wrapper for API requests with proper error handling
+// Wrapper for API requests with proper error handling
 async function apiFetch(endpoint, options = {}) {
     const token = localStorage.getItem("token");
     const url = endpoint.startsWith('http') ? endpoint : `${API_CONFIG.API_BASE_URL}${endpoint}`;
