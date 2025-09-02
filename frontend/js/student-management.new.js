@@ -27,14 +27,16 @@ class StudentManagement {
             
             // If no data in localStorage, try to load from API if available
             try {
-                const response = await fetch(`${window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com/api'}/students`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        this.students = data;
-                        this.saveToLocalStorage();
-                        return;
-                    }
+                const apiUrl = window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com/api';
+                const response = await fetch(`${apiUrl}/students`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    this.students = data;
+                    this.saveToLocalStorage();
+                    return;
                 }
             } catch (apiError) {
                 console.warn('API not available, using sample data:', apiError);

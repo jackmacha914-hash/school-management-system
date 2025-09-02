@@ -1395,7 +1395,7 @@ function showFormMessage(element, message, type = 'info') {
 }
 
 // Initialize the page
-document.addEventListener('DOMContentLoaded', () => {
+function initializeAdminPage() {
     // Initialize modals
     initializeModals();
     
@@ -1451,7 +1451,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize bulk actions
     const usersBulkDelete = document.getElementById('users-bulk-delete');
     const usersBulkExport = document.getElementById('users-bulk-export');
-    const selectedUserIds = new Set();
     
     // Bulk Delete handler
     if (usersBulkDelete) {
@@ -1462,7 +1461,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (usersBulkExport) {
         usersBulkExport.addEventListener('click', handleBulkExport);
     }
-});
+}
+
+// Initialize the page when DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeAdminPage);
+} else {
+    initializeAdminPage();
+}
 
 // Handle bulk delete
 async function handleBulkDelete() {
@@ -1558,4 +1564,7 @@ function debounce(func, wait) {
 }
 
 // Load users on page load
-if (userTableBody) loadUsersWithFilters();
+document.addEventListener('DOMContentLoaded', () => {
+    const userTableBody = document.querySelector('#user-table tbody');
+    if (userTableBody) loadUsersWithFilters();
+});
