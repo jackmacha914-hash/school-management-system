@@ -27,7 +27,7 @@ class StudentManagement {
             
             // If no data in localStorage, try to load from API if available
             try {
-                const response = await fetch(`${window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com/api'}/students`));
+                const response = await fetch(`${window.API_CONFIG?.API_BASE_URL || 'https://school-management-system-av07.onrender.com/api'}/students`);
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data) && data.length > 0) {

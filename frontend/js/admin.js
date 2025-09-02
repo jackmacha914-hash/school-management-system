@@ -581,66 +581,123 @@ if (elements.userExportBtn) {
     });
 }
 
-// Bulk Delete
-if (usersBulkDelete) {
-    usersBulkDelete.onclick = function() {
-        if (selectedUserIds.size === 0) return;
-        universalConfirmTitle.textContent = 'Delete Selected Users';
-        universalConfirmMessage.textContent = `Are you sure you want to delete ${selectedUserIds.size} selected user(s)?`;
-        openUniversalModal(universalConfirmModal);
-        universalConfirmYes.onclick = async () => {
-            closeUniversalModal(universalConfirmModal);
-            const token = localStorage.getItem('token');
-            for (const userId of selectedUserIds) {
-                try {
-                    await fetch(`https://school-management-system-av07.onrender.com/api/users/${userId}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                } catch {}
+document.addEventListener('DOMContentLoaded', () => {
+    const usersBulkDelete = document.getElementById('users-bulk-delete');
+    const usersBulkExport = document.getElementById('users-bulk-export');
+    const selectedUserIds = new Set();
+
+    // Bulk Delete
+    if (usersBulkDelete) {
+        usersBulkDelete.onclick = function() {
+            if (selectedUserIds.size === 0) return;
+            
+            const universalConfirmTitle = document.getElementById('universal-confirm-title');
+            const universalConfirmMessage = document.getElementById('universal-confirm-message');
+            const universalConfirmYes = document.getElementById('universal-confirm-yes');
+            const universalConfirmNo = document.getElementById('universal-confirm-no');
+            const universalConfirmModal = document.getElementById('universal-confirm-modal');
+            
+            if (!universalConfirmTitle || !universalConfirmMessage || !universalConfirmYes || !universalConfirmNo || !universalConfirmModal) {
+                console.error('Required modal elements not found');
+                return;
             }
-            clearUserSelections();
-            loadUsersWithFilters();
+            
+            universalConfirmTitle.textContent = 'Delete Selected Users';
+            universalConfirmMessage.textContent = `Are you sure you want to delete ${selectedUserIds.size} selected user(s)?`;
+            
+            const openUniversalModal = (modal) => modal.style.display = 'block';
+            const closeUniversalModal = (modal) => modal.style.display = 'none';
+            
+            openUniversalModal(universalConfirmModal);
+            
+            const handleConfirm = async () => {
+                closeUniversalModal(universalConfirmModal);
+                const token = localStorage.getItem('token');
+                for (const userId of selectedUserIds) {
+                    try {
+                        await fetch(`https://school-management-system-av07.onrender.com/api/users/${userId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                    } catch (error) {
+                        console.error(`Error deleting user ${userId}:`, error);
+                    }
+                }
+                selectedUserIds.clear();
+                if (typeof loadUsersWithFilters === 'function') {
+                    loadUsersWithFilters();
+                }
+                // Remove event listener to prevent memory leaks
+                universalConfirmYes.removeEventListener('click', handleConfirm);
+            };
+            
+            const handleCancel = () => {
+                closeUniversalModal(universalConfirmModal);
+                // Remove event listeners to prevent memory leaks
+                universalConfirmYes.removeEventListener('click', handleConfirm);
+                universalConfirmNo.removeEventListener('click', handleCancel);
+            };
+            
+            // Remove any existing listeners to prevent duplicates
+            universalConfirmYes.removeEventListener('click', handleConfirm);
+            universalConfirmNo.removeEventListener('click', handleCancel);
+            
+            // Add new listeners
+            universalConfirmYes.addEventListener('click', handleConfirm);
+            universalConfirmNo.addEventListener('click', handleCancel);
         };
-        universalConfirmNo.onclick = () => closeUniversalModal(universalConfirmModal);
-    };
-}
+    }
 
-// Bulk Export
-if (usersBulkExport) {
-    usersBulkExport.onclick = async function() {
-        if (selectedUserIds.size === 0) return;
-        const token = localStorage.getItem('token');
-        let url = 'https://school-management-system-av07.onrender.com/api/users';
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-        const users = await res.json();
-        const selected = users.filter(u => selectedUserIds.has(u._id));
-        let csv = 'Name,Email,Username,Role\n';
-        selected.forEach(u => {
-            csv += `${u.name},${u.email},${u.username},${u.role}\n`;
-        });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'selected_users.csv';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-}
-
-// --- Universal Modal Logic ---
-const universalEditModal = document.getElementById('universal-edit-modal');
-const closeUniversalEditModal = document.getElementById('close-universal-edit-modal');
-const universalEditForm = document.getElementById('universal-edit-form');
-const universalEditMsg = document.getElementById('universal-edit-msg');
-
-const universalConfirmModal = document.getElementById('universal-confirm-modal');
-const closeUniversalConfirmModal = document.getElementById('close-universal-confirm-modal');
-const universalConfirmTitle = document.getElementById('universal-confirm-title');
-const universalConfirmMessage = document.getElementById('universal-confirm-message');
-const universalConfirmYes = document.getElementById('universal-confirm-yes');
-const universalConfirmNo = document.getElementById('universal-confirm-no');
+        // Bulk Export
+    if (usersBulkExport) {
+        usersBulkExport.onclick = async function() {
+            if (selectedUserIds.size === 0) return;
+            
+            const token = localStorage.getItem('token');
+            try {
+                const url = 'https://school-management-system-av07.onrender.com/api/users';
+                const res = await fetch(url, { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                
+                const users = await res.json();
+                const selected = Array.isArray(users) ? 
+                    users.filter(u => u && u._id && selectedUserIds.has(u._id)) : [];
+                
+                if (selected.length === 0) {
+                    alert('No users found to export');
+                    return;
+                }
+                
+                let csv = 'Name,Email,Username,Role\n';
+                selected.forEach(u => {
+                    if (u) {
+                        const name = u.name || '';
+                        const email = u.email || '';
+                        const username = u.username || '';
+                        const role = u.role || '';
+                        csv += `"${name}","${email}","${username}","${role}"\n`;
+                    }
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', blobUrl);
+                link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+                
+            } catch (error) {
+                console.error('Error exporting users:', error);
+                alert('Failed to export users. Please try again.');
+            }
 
 // Modal helper functions
 function openUniversalModal(modal) { 
@@ -1390,7 +1447,102 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elements.userStatusFilter) {
         elements.userStatusFilter.addEventListener('change', loadUsersWithFilters);
     }
+    
+    // Initialize bulk actions
+    const usersBulkDelete = document.getElementById('users-bulk-delete');
+    const usersBulkExport = document.getElementById('users-bulk-export');
+    const selectedUserIds = new Set();
+    
+    // Bulk Delete handler
+    if (usersBulkDelete) {
+        usersBulkDelete.addEventListener('click', handleBulkDelete);
+    }
+    
+    // Bulk Export handler
+    if (usersBulkExport) {
+        usersBulkExport.addEventListener('click', handleBulkExport);
+    }
 });
+
+// Handle bulk delete
+async function handleBulkDelete() {
+    if (selectedUserIds.size === 0) return;
+    
+    const confirmDelete = confirm(`Are you sure you want to delete ${selectedUserIds.size} selected user(s)?`);
+    if (!confirmDelete) return;
+    
+    const token = localStorage.getItem('token');
+    const deletePromises = [];
+    
+    for (const userId of selectedUserIds) {
+        deletePromises.push(
+            fetch(`https://school-management-system-av07.onrender.com/api/users/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+        );
+    }
+    
+    try {
+        await Promise.all(deletePromises);
+        selectedUserIds.clear();
+        loadUsersWithFilters();
+        alert('Selected users deleted successfully');
+    } catch (error) {
+        console.error('Error deleting users:', error);
+        alert('Failed to delete some users. Please try again.');
+    }
+}
+
+// Handle bulk export
+async function handleBulkExport() {
+    if (selectedUserIds.size === 0) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const response = await fetch('https://school-management-system-av07.onrender.com/api/users', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const users = await response.json();
+        const selected = Array.isArray(users) ? 
+            users.filter(u => u && u._id && selectedUserIds.has(u._id)) : [];
+        
+        if (selected.length === 0) {
+            alert('No users found to export');
+            return;
+        }
+        
+        let csv = 'Name,Email,Username,Role\n';
+        selected.forEach(u => {
+            if (u) {
+                const name = u.name || '';
+                const email = u.email || '';
+                const username = u.username || '';
+                const role = u.role || '';
+                csv += `"${name}","${email}","${username}","${role}"\n`;
+            }
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+        
+    } catch (error) {
+        console.error('Error exporting users:', error);
+        alert('Failed to export users. Please try again.');
+    }
+}
 
 // Utility function to debounce function calls
 function debounce(func, wait) {

@@ -87,46 +87,60 @@ function buildEventsQueryString(filters) {
 async function loadEventsWithFilters() {
     const token = localStorage.getItem('token');
     const filters = getEventsFilters();
-    let url = 'https://school-management-system-av07.onrender.com/api/events' + buildEventsQueryString(filters);
     try {
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-        const events = await res.json();
-        eventsTableBody.innerHTML = '';
-        if (Array.isArray(events) && events.length > 0) {
-            events.forEach(event => {
-        }
-
         const filters = getEventsFilters();
         const queryString = buildEventsQueryString(filters);
-        const response = await fetch(`/api/events${queryString}`);
+        const url = 'https://school-management-system-av07.onrender.com/api/events' + queryString;
+        
+        const response = await fetch(url, { 
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const events = await response.json();
+        eventsTableBody.innerHTML = '';
+        
+        if (Array.isArray(events) && events.length > 0) {
+            eventsTableBody.innerHTML = events.map(event =>
+                `<tr>
+                    <td><input type="checkbox" class="event-select-checkbox" data-id="${event._id}"></td>
+                    <td>${event.title}</td>
+                    <td>${event.type}</td>
+                    <td>${new Date(event.date).toLocaleDateString()}</td>
+                    <td>${event.description}</td>
+                    <td>
+                        <button class="action-btn edit" onclick="openEditEventModal('${event._id}')">Edit</button>
+                        <button class="action-btn delete" onclick="deleteEvent('${event._id}')">Delete</button>
+                    </td>
+                </tr>`
+            ).join('');
 
-        eventsTableBody.innerHTML = events.map(event =>
-            `<tr>
-                <td><input type="checkbox" class="event-select-checkbox" data-id="${event._id}"></td>
-                <td>${event.title}</td>
-                <td>${event.type}</td>
-                <td>${new Date(event.date).toLocaleDateString()}</td>
-                <td>${event.description}</td>
-                <td>
-                    <button class="action-btn edit" onclick="openEditEventModal('${event._id}')">Edit</button>
-                    <button class="action-btn delete" onclick="deleteEvent('${event._id}')">Delete</button>
-                </td>
-            </tr>`
-        ).join('');
-
-        // Update bulk selection state if toolbar exists
-        if (eventsBulkToolbar) {
-            document.querySelectorAll('.event-select-checkbox').forEach(cb => {
-                cb.checked = false;
-                selectedEventIds.delete(cb.getAttribute('data-id'));
-            });
-            updateEventsBulkToolbarState();
+            // Update bulk selection state if toolbar exists
+            const eventsBulkToolbar = document.getElementById('events-bulk-toolbar');
+            if (eventsBulkToolbar) {
+                document.querySelectorAll('.event-select-checkbox').forEach(cb => {
+                    cb.checked = false;
+                    if (window.selectedEventIds) {
+                        window.selectedEventIds.delete(cb.getAttribute('data-id'));
+                    }
+                });
+                if (typeof updateEventsBulkToolbarState === 'function') {
+                    updateEventsBulkToolbarState();
+                }
+            }
+        } else {
+            eventsTableBody.innerHTML = '<tr><td colspan="6">No events found.</td></tr>';
         }
     } catch (err) {
         console.error('Error loading events:', err);
         if (eventsTableBody) {
-            eventsTableBody.innerHTML = '<tr><td colspan="6">Error loading events.</td></tr>';
+            eventsTableBody.innerHTML = '<tr><td colspan="6">Error loading events. Please try again later.</td></tr>';
         }
     }
 }
