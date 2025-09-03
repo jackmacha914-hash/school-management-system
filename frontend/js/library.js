@@ -7,7 +7,7 @@
  * @param {Object} options - Fetch options
  * @returns {Promise<any>} - The parsed JSON response
  */
-async function apiFetch(url, options = {}) {
+window.apiFetch = async function apiFetch(url, options = {}) {
     const token = localStorage.getItem('token');
     const defaultHeaders = {
         'Content-Type': 'application/json',
@@ -1428,9 +1428,14 @@ async function loadIssuedBooks() {
         try {
             result = await apiFetch(`/library/issued?${params.toString()}`);
         } catch (error) {
-            // Fallback to alternative endpoint if primary fails
             console.warn('Primary endpoint failed, trying fallback...', error);
-            result = await apiFetch(`/library/books/issued?${params.toString()}`);
+            try {
+                // Fallback to alternative endpoint if primary fails
+                result = await apiFetch(`/library/books/issued?${params.toString()}`);
+            } catch (fallbackError) {
+                console.error('All API endpoints failed:', fallbackError);
+                throw new Error('Unable to load issued books. Please check your connection and try again.');
+            }
         }
         
         // Handle various response formats
