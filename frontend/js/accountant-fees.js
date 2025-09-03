@@ -1,4 +1,24 @@
 // Accountant Fees Management
+
+/**
+ * Debounce utility function to limit the rate at which a function can fire.
+ * @param {Function} func - The function to debounce
+ * @param {number} wait - The time in milliseconds to delay
+ * @returns {Function} - The debounced function
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func.apply(this, args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Accountant Fees Management
 class AccountantFees {
     constructor() {
         this.feeTableBody = document.getElementById('fee-table-body');

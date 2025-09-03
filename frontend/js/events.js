@@ -114,38 +114,39 @@ async function loadEventsWithFilters() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data = await response.json();
-        return data;
-        
-        const events = await response.json();
-        eventsTableBody.innerHTML = '';
-        
-        if (Array.isArray(events) && events.length > 0) {
-            eventsTableBody.innerHTML = events.map(event =>
-                `<tr>
-                    <td><input type="checkbox" class="event-select-checkbox" data-id="${event._id}"></td>
-                    <td>${event.title}</td>
-                    <td>${event.type}</td>
-                    <td>${new Date(event.date).toLocaleDateString()}</td>
-                    <td>${event.description}</td>
-                    <td>
-                        <button class="action-btn edit" onclick="openEditEventModal('${event._id}')">Edit</button>
-                        <button class="action-btn delete" onclick="deleteEvent('${event._id}')">Delete</button>
-                    </td>
-                </tr>`
-            ).join('');
+        try {
+            const events = await response.json();
+            eventsTableBody.innerHTML = '';
+            
+            if (Array.isArray(events) && events.length > 0) {
+                eventsTableBody.innerHTML = events.map(event =>
+                    `<tr>
+                        <td><input type="checkbox" class="event-select-checkbox" data-id="${event._id}"></td>
+                        <td>${event.title}</td>
+                        <td>${event.type}</td>
+                        <td>${new Date(event.date).toLocaleDateString()}</td>
+                        <td>${event.description}</td>
+                        <td>
+                            <button class="action-btn edit" onclick="openEditEventModal('${event._id}')">Edit</button>
+                            <button class="action-btn delete" onclick="deleteEvent('${event._id}')">Delete</button>
+                        </td>
+                    </tr>`
+                ).join('');
 
-            // Update bulk selection state if toolbar exists
-            const eventsBulkToolbar = document.getElementById('events-bulk-toolbar');
-            if (eventsBulkToolbar) {
-                document.querySelectorAll('.event-select-checkbox').forEach(cb => {
-                    cb.checked = false;
-                    if (window.selectedEventIds) {
-                        selectedEventIds.delete(cb.getAttribute('data-id'));
+                // Update bulk selection state if toolbar exists
+                const eventsBulkToolbar = document.getElementById('events-bulk-toolbar');
+                if (eventsBulkToolbar) {
+                    document.querySelectorAll('.event-select-checkbox').forEach(cb => {
+                        cb.checked = false;
+                        if (window.selectedEventIds) {
+                            selectedEventIds.delete(cb.getAttribute('data-id'));
+                        }
+                    });
+                    if (typeof updateEventsBulkToolbarState === 'function') {
+                        updateEventsBulkToolbarState();
                     }
-                });
-                if (typeof updateEventsBulkToolbarState === 'function') {
-                    updateEventsBulkToolbarState();
+                } else {
+                    eventsTableBody.innerHTML = '<tr><td colspan="6">No events found.</td></tr>';
                 }
             } else {
                 eventsTableBody.innerHTML = '<tr><td colspan="6">No events found.</td></tr>';
@@ -154,7 +155,11 @@ async function loadEventsWithFilters() {
             console.error('Error loading events:', error);
             eventsTableBody.innerHTML = '<tr><td colspan="6">Error loading events. Please try again later.</td></tr>';
         }
+    } catch (error) {
+        console.error('Error loading events:', error);
+        eventsTableBody.innerHTML = '<tr><td colspan="6">Error loading events. Please try again later.</td></tr>';
     }
+}
 
     // Attach filter listeners
     if (eventsSearch) eventsSearch.addEventListener('input', () => loadEventsWithFilters());

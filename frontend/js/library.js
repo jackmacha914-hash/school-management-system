@@ -1,6 +1,6 @@
 // Library Management Logic
-// API configuration will be set from the HTML file
-const API_CONFIG = window.API_CONFIG || { BASE_URL: 'https://school-management-system-av07.onrender.com' };
+// API configuration is imported from config.js (available as window.API_CONFIG)
+// The apiFetch utility is also available from config.js
 
 // DOM Elements
 const libraryForm = document.getElementById('library-form');
@@ -68,44 +68,39 @@ function buildLibraryQueryString(filters) {
     return params.length ? '?' + params.join('&') : '';
 }
 
+/**
+ * Load books from the server with optional filters
+ */
 async function loadLibraryWithFilters() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        showNotification('Please log in to view library', 'error');
-        return;
-    }
-    
-    const filters = getLibraryFilters();
-    const queryString = buildLibraryQueryString(filters);
-    let url = `${API_CONFIG.BASE_URL}/api/library${queryString}`;
-    
-    console.log('Loading library with filters:', filters);
-    console.log('Request URL:', url);
-    
     try {
-        const res = await fetch(url, { 
-            headers: { 
-                'Authorization': `Bearer ${token}`,
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-            } 
-        });
+        const filters = getLibraryFilters();
+        const queryString = buildLibraryQueryString(filters);
         
-        if (!res.ok) {
-            const errorText = await res.text();
-            console.error('Error response:', errorText);
-            throw new Error(`HTTP error! status: ${res.status}`);
+        // Show loading state
+        if (libraryTableBody) {
+            libraryTableBody.innerHTML = '<tr><td colspan="5" class="text-center">Loading books...</td></tr>';
         }
         
-        const books = await res.json();
+        // Make API request using the apiFetch utility
+        const books = await apiFetch(`/library${queryString}`, {
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
+        
         console.log('Received books:', books);
-        libraryTableBody.innerHTML = '';
-        if (Array.isArray(books) && books.length > 0) {
-            books.forEach(book => {
-                libraryTableBody.insertAdjacentHTML('beforeend', renderBookRow(book));
-            });
-        } else {
-            libraryTableBody.innerHTML = '<tr><td colspan="5">No books found.</td></tr>';
+        
+        // Update the UI with the received books
+        if (libraryTableBody) {
+            libraryTableBody.innerHTML = '';
+            if (Array.isArray(books) && books.length > 0) {
+                books.forEach(book => {
+                    libraryTableBody.insertAdjacentHTML('beforeend', renderBookRow(book));
+                });
+            } else {
+                libraryTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No books found matching your criteria.</td></tr>';
+            }
         }
         // Add event listeners for checkboxes
         if (libraryTableBody) {
@@ -661,82 +656,75 @@ document.addEventListener('click', (e) => {
 });
 
 // Close modal with escape key
-// Fetch students by class
+
+/**
+ * Fetch students by class using the apiFetch utility
+ * @param {string} className - The class name in format 'gradeX' or 'Grade X'
+ * @returns {Promise<Array>} Array of student objects
+ */
 async function fetchStudentsByClass(className) {
     try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            console.error('No authentication token found');
-            throw new Error('Authentication required');
-        }
-        
         // Convert class format from 'grade8' to 'Grade 8' for the API
         const formattedClassName = className.replace(/^grade(\d+)$/i, 'Grade $1');
-        const url = `${API_CONFIG.BASE_URL}/api/students/class/${encodeURIComponent(formattedClassName)}`;
         
-        console.log(`Fetching students from: ${url}`);
-        console.log('Using token:', token ? 'Token exists' : 'No token');
-        
-        const response = await fetch(url, {
+        // Make API request using apiFetch
+        const response = await apiFetch(`/students/class/${encodeURIComponent(formattedClassName)}`, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
                 'Accept': 'application/json'
-            },
-            credentials: 'include' // Important for cookies if using them
+            }
         });
         
-        console.log('Response status:', response.status, response.statusText);
-        
-        const responseText = await response.text();
-        console.log('Raw response:', responseText);
-        
-        let data;
-        try {
-            data = responseText ? JSON.parse(responseText) : null;
-        } catch (e) {
-            console.error('Failed to parse JSON response:', e);
-            throw new Error('Invalid response from server');
-        }
-        
-        if (!response.ok) {
-            console.error('API Error Response:', data);
-            throw new Error(data?.message || `Failed to fetch students: ${response.status} ${response.statusText}`);
-        }
-        
         // Extract students array from the response data
-        const students = data?.data || [];
+        const students = Array.isArray(response) ? response : (response?.data || []);
         
         if (!Array.isArray(students)) {
-            console.error('Students data is not an array:', students);
             throw new Error('Invalid students data format received from server');
         }
         
-        console.log(`Received ${students.length} students for class ${formattedClassName}`, students);
+        console.debug(`Fetched ${students.length} students for class ${formattedClassName}`);
         return students;
         
     } catch (error) {
         console.error('Error in fetchStudentsByClass:', error);
-        showNotification(error.message || 'Error fetching students. Please try again.', 'error');
+        showNotification(
+            error.message || 'Error fetching students. Please try again.',
+            'error'
+        );
         return [];
     }
 }
 
-// Populate student dropdown
+/**
+ * Populate student dropdown with students from a specific class
+ * @param {string} className - The class name to fetch students for
+ * @param {HTMLSelectElement} studentSelect - The select element to populate
+ * @returns {Promise<Array>} Array of student objects
+ */
 async function populateStudentDropdown(className, studentSelect) {
-    if (!studentSelect) {
-        console.error('Student select element is null');
-        return;
+    // Validate inputs
+    if (!studentSelect || !(studentSelect instanceof HTMLSelectElement)) {
+        console.error('Invalid student select element');
+        return [];
     }
 
+    // Store the current value to restore after refresh
+    const currentValue = studentSelect.value;
+    
     try {
-        console.log(`Fetching students for class: ${className}`);
-        studentSelect.disabled = true;
-        studentSelect.innerHTML = '<option value="">Loading students...</option>';
+        console.debug(`Fetching students for class: ${className}`);
         
+        // Show loading state
+        studentSelect.disabled = true;
+        studentSelect.innerHTML = `
+            <option value="" disabled selected>
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Loading students...
+            </option>`;
+        
+        // Fetch students for the selected class
         const students = await fetchStudentsByClass(className);
-        console.log(`Found ${students.length} students`, students);
+        console.debug(`Found ${students.length} students for class ${className}`);
         
         // Clear existing options
         studentSelect.innerHTML = '';
@@ -745,106 +733,204 @@ async function populateStudentDropdown(className, studentSelect) {
         const defaultOption = document.createElement('option');
         defaultOption.value = '';
         defaultOption.textContent = students.length > 0 ? 'Select a student' : 'No students found';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
         studentSelect.appendChild(defaultOption);
         
         // Add student options if available
         if (students.length > 0) {
             students.forEach(student => {
-                const option = document.createElement('option');
-                option.value = student._id || '';
-                option.textContent = student.name || 'Unnamed Student';
-                if (student.email) {
-                    option.setAttribute('data-email', student.email);
+                if (!student || !student._id) {
+                    console.warn('Invalid student data:', student);
+                    return;
                 }
+                
+                const option = document.createElement('option');
+                option.value = student._id;
+                option.textContent = student.name?.trim() || `Student ${student._id.substring(0, 6)}`;
+                
+                // Add data attributes for additional info
+                if (student.email) option.dataset.email = student.email;
+                if (student.admissionNumber) option.dataset.admissionNumber = student.admissionNumber;
+                
                 studentSelect.appendChild(option);
             });
+            
+            // Try to restore the previously selected value if it still exists
+            if (currentValue && studentSelect.querySelector(`option[value="${currentValue}"]`)) {
+                studentSelect.value = currentValue;
+            }
         }
         
-        return students; // Return students for further processing if needed
+        // Dispatch change event to notify other components
+        studentSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        return students;
+        
     } catch (error) {
-        console.error('Error populating students:', error);
-        studentSelect.innerHTML = '<option value="">Error loading students</option>';
-        throw error; // Re-throw to handle in the caller
+        console.error('Error populating student dropdown:', error);
+        
+        // Show error state
+        studentSelect.innerHTML = `
+            <option value="" disabled selected>
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Error loading students
+            </option>`;
+            
+        // Show error notification
+        showNotification(
+            'Failed to load students. ' + (error.message || 'Please try again.'),
+            'error'
+        );
+        
+        return [];
     } finally {
         // Always re-enable the select, even if there was an error
         studentSelect.disabled = false;
     }
 }
 
-// Initialize library functionality when DOM is loaded
+/**
+ * Initialize library functionality when DOM is loaded
+ */
 function initLibrary() {
-    console.log('Initializing library functionality...');
-    initModal();
+    console.debug('Initializing library functionality...');
     
-    // Initialize filter elements
-    const libraryClassFilter = document.getElementById('library-class-filter');
-    const resetFiltersBtn = document.getElementById('reset-library-filters');
-    
-    // Add event delegation for class selection change (for student selection)
-    document.addEventListener('change', async (e) => {
-        console.log('Change event triggered on:', e.target.id);
+    try {
+        // Initialize modal functionality
+        initModal();
         
-        // Handle class selection for student dropdown
-        if (e.target && e.target.id === 'classSelect') {
-            console.log('Class selected:', e.target.value);
-            const studentSelect = document.getElementById('studentSelect');
-            if (studentSelect) {
-                console.log('Found student select element');
-                studentSelect.disabled = false;
-                studentSelect.innerHTML = '<option value="">Loading students...</option>';
+        // Initialize issued books search functionality
+        initIssuedBooksSearch();
+        
+        // Load initial data
+        loadLibraryWithFilters().catch(error => {
+            console.error('Error loading library data:', error);
+            showNotification('Failed to load library data. Please refresh the page.', 'error');
+        });
+        
+        // Add event delegation for class selection change (for student selection)
+        document.addEventListener('change', async (e) => {
+            if (!e.target) return;
+            
+            // Handle class selection for student dropdown
+            if (e.target.matches('#classSelect')) {
+                const className = e.target.value;
+                console.debug('Class selected:', className);
+                
+                const studentSelect = document.getElementById('studentSelect');
+                if (!studentSelect) {
+                    console.warn('Student select element not found');
+                    return;
+                }
+                
+                // Show loading state and disable the select
+                studentSelect.disabled = true;
+                studentSelect.innerHTML = `
+                    <option value="" selected disabled>
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Loading students...
+                    </option>`;
+                
                 try {
-                    await populateStudentDropdown(e.target.value, studentSelect);
-                    console.log('Student dropdown populated');
+                    await populateStudentDropdown(className, studentSelect);
+                    console.debug('Student dropdown populated successfully');
                 } catch (error) {
                     console.error('Error populating student dropdown:', error);
-                    studentSelect.innerHTML = '<option value="">Error loading students</option>';
+                    studentSelect.innerHTML = [
+                        '<option value="" selected disabled>',
+                        '    <i class="bi bi-exclamation-triangle me-2"></i>',
+                        '    Error loading students',
+                        '</option>'
+                    ].join('');
+                } finally {
+                    studentSelect.disabled = false;
                 }
-            } else {
-                console.error('Student select element not found');
             }
+            
+            // Handle library class filter change
+            if (e.target.matches('#library-class-filter, #status-filter, #academic-year-filter')) {
+                console.debug('Library filter changed:', e.target.id, e.target.value);
+                loadLibraryWithFilters().catch(error => {
+                    console.error('Error applying filters:', error);
+                    showNotification('Error applying filters. Please try again.', 'error');
+                });
+            }
+        });
+        
+        // Initialize bulk actions
+        if (libraryBulkDelete) {
+            libraryBulkDelete.addEventListener('click', handleBulkDelete);
         }
         
-        // Handle library class filter change
-        if (e.target && e.target.id === 'library-class-filter') {
-            console.log('Library class filter changed:', e.target.value);
-            loadLibraryWithFilters();
+        if (libraryBulkExport) {
+            libraryBulkExport.addEventListener('click', handleBulkExport);
         }
-    });
-    
-    // Initialize bulk actions
-    if (libraryBulkDelete) {
-        libraryBulkDelete.onclick = handleBulkDelete;
-    }
-    if (libraryBulkExport) {
-        libraryBulkExport.onclick = handleBulkExport;
-    }
-    
-    // Initialize search and filter events
-    if (librarySearch) {
-        librarySearch.addEventListener('input', debounce(loadLibraryWithFilters, 300));
-    }
-    if (libraryGenreFilter) {
-        libraryGenreFilter.addEventListener('change', loadLibraryWithFilters);
-    }
-    if (libraryAuthorFilter) {
-        libraryAuthorFilter.addEventListener('input', debounce(loadLibraryWithFilters, 300));
-    }
-    
-    // Reset filters
-    if (resetFiltersBtn) {
-        resetFiltersBtn.addEventListener('click', () => {
-            console.log('Resetting library filters');
-            if (librarySearch) librarySearch.value = '';
-            if (libraryGenreFilter) libraryGenreFilter.value = '';
-            if (libraryClassFilter) libraryClassFilter.value = '';
-            if (libraryAuthorFilter) libraryAuthorFilter.value = '';
-            loadLibraryWithFilters();
+        
+        // Initialize search and filter events with debouncing
+        const searchInputs = [
+            { element: librarySearch, event: 'input', debounce: 300 },
+            { element: libraryAuthorFilter, event: 'input', debounce: 300 },
+            { element: document.getElementById('search-issued-books'), event: 'input', debounce: 300 },
+            { element: libraryGenreFilter, event: 'change', debounce: 0 },
+            { element: document.getElementById('class-filter'), event: 'change', debounce: 0 }
+        ];
+        
+        searchInputs.forEach(({ element, event, debounce: wait }) => {
+            if (!element) return;
+            
+            const handler = () => {
+                if (element.id === 'search-issued-books' || element.id === 'class-filter') {
+                    console.debug('Filtering issued books...');
+                    filterIssuedBooks();
+                } else {
+                    console.debug('Loading library with filters...');
+                    loadLibraryWithFilters();
+                }
+            };
+            
+            element.addEventListener(event, wait > 0 ? debounce(handler, wait) : handler);
         });
-    }
-    
-    // Load initial library data
-    if (libraryList) {
-        loadLibraryWithFilters();
+        
+        // Initialize reset filters button if it exists
+        const resetFiltersBtn = document.getElementById('reset-library-filters');
+        if (resetFiltersBtn) {
+            resetFiltersBtn.addEventListener('click', () => {
+                console.debug('Resetting filters...');
+                // Reset all filter inputs
+                document.querySelectorAll('input[type="text"], input[type="search"], select')
+                    .forEach(input => {
+                        if (input.id && !['classSelect', 'studentSelect'].includes(input.id)) {
+                            input.value = '';
+                        }
+                    });
+                
+                // Reload data with cleared filters
+                loadLibraryWithFilters().catch(error => {
+                    console.error('Error resetting filters:', error);
+                    showNotification('Error resetting filters. Please try again.', 'error');
+                });
+            });
+        }
+        
+        // Load initial library data if on the library page
+        if (document.getElementById('library-list')) {
+            loadLibraryWithFilters().catch(error => {
+                console.error('Error loading initial library data:', error);
+                showNotification('Error loading library data. Please refresh the page.', 'error');
+            });
+        }
+        
+        // Load issued books if on the issued books page
+        if (document.getElementById('issued-books-list')) {
+            loadIssuedBooks().catch(error => {
+                console.error('Error loading issued books:', error);
+                showNotification('Error loading issued books. Please refresh the page.', 'error');
+            });
+        }
+    } catch (error) {
+        console.error('Error initializing library:', error);
+        showNotification('Error initializing library. Please refresh the page.', 'error');
     }
 }
 
@@ -963,57 +1049,68 @@ function initModal() {
 if (libraryForm) {
     libraryForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const title = document.getElementById('book-title').value;
-        const author = document.getElementById('book-author').value;
-        const year = document.getElementById('book-year').value;
-        const className = document.getElementById('book-class').value;
-        const status = document.getElementById('book-status').value;
-        const copies = parseInt(document.getElementById('book-copies').value) || 1;
         
-        if (!title || !author || !className) {
-            alert('Please fill in all required fields');
-            return;
-        }
-        
-        if (copies < 1) {
-            alert('Number of copies must be at least 1');
-            return;
-        }
-        
-        const token = localStorage.getItem('token');
-        const bookData = { 
-            title, 
-            author, 
-            year: year ? parseInt(year) : new Date().getFullYear(),
-            className,
-            status: status || 'available',
-            copies: copies,
-            available: status === 'available' ? copies : 0
-        };
-        
-        console.log('Sending book data:', bookData);
         try {
-            const res = await fetch('https://school-management-system-av07.onrender.com/api/library', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify(bookData)
-            });
+            // Get form data
+            const formData = new FormData(libraryForm);
+            const bookId = formData.get('bookId');
             
-            const responseData = await res.json().catch(() => ({}));
-            console.log('Server response:', responseData);
-            if (res.ok) {
-                libraryForm.reset();
-                loadLibraryWithFilters();
-            } else {
-                const errorText = await res.text();
-            console.error('Failed to add book. Status:', res.status, 'Response:', errorText);
-            alert(`Failed to add book: ${errorText || 'Unknown error'}`);
+            // Show loading state
+            const submitButton = libraryForm.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton ? submitButton.innerHTML : null;
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
             }
-        } catch (err) {
-            alert('Network error');
+            
+            try {
+                // Determine if this is an update or create
+                const url = bookId ? `/books/${bookId}` : '/books';
+                const method = bookId ? 'PUT' : 'POST';
+                
+                // Make API request using apiFetch
+                const result = await apiFetch(url, {
+                    method,
+                    body: formData,
+                    // Don't set Content-Type header - let the browser set it with the correct boundary
+                    headers: {}
+                });
+                
+                // Show success message
+                showNotification(
+                    bookId ? 'Book updated successfully' : 'Book added successfully', 
+                    'success'
+                );
+                
+                // Reset form and reload books
+                libraryForm.reset();
+                const bookIdInput = document.getElementById('book-id');
+                if (bookIdInput) bookIdInput.value = '';
+                
+                // Close the modal if open
+                const addBookModal = document.getElementById('addBookModal');
+                if (addBookModal) {
+                    const modal = bootstrap.Modal.getInstance(addBookModal);
+                    if (modal) modal.hide();
+                }
+                
+                // Reload the books list
+                await loadLibraryWithFilters();
+                
+            } finally {
+                // Restore button state
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error saving book:', error);
+            showNotification(
+                error.message || 'Failed to save book. Please try again.', 
+                'error'
+            );
         }
     });
 }
@@ -1050,37 +1147,104 @@ window.onclick = function(event) {
   if (event.target === universalConfirmModal) closeUniversalModal(universalConfirmModal);
 };
 
-// Bulk Delete
-if (libraryBulkDelete) {
-    libraryBulkDelete.onclick = async function() {
-        if (selectedBookIds.size === 0) return;
-        const universalConfirmModal = document.getElementById('universal-confirm-modal');
-        const universalConfirmTitle = document.getElementById('universal-confirm-title');
-        const universalConfirmMessage = document.getElementById('universal-confirm-message');
-        const universalConfirmYes = document.getElementById('universal-confirm-yes');
-        const universalConfirmNo = document.getElementById('universal-confirm-no');
-        if (universalConfirmTitle) universalConfirmTitle.textContent = 'Delete Selected Books';
-        if (universalConfirmMessage) universalConfirmMessage.textContent = `Are you sure you want to delete ${selectedBookIds.size} selected book(s)?`;
-        if (universalConfirmModal) universalConfirmModal.style.display = 'block';
-        if (universalConfirmYes) {
-            universalConfirmYes.onclick = async () => {
-                if (universalConfirmModal) universalConfirmModal.style.display = 'none';
-                const token = localStorage.getItem('token');
-                for (const bookId of selectedBookIds) {
-                    try {
-                        await fetch(`https://school-management-system-av07.onrender.com/api/library/${bookId}`, {
-                            method: 'DELETE',
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                    } catch {}
-                }
-                clearLibrarySelections();
-                loadLibraryWithFilters();
-            };
+/**
+ * Handle bulk deletion of selected books
+ */
+async function handleBulkDelete() {
+    if (selectedBookIds.size === 0) return;
+    
+    // Show confirmation dialog
+    const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedBookIds.size} selected book(s)?`);
+    if (!confirmDelete) return;
+    
+    const deletePromises = [];
+    
+    // Create delete requests for all selected books
+    for (const bookId of selectedBookIds) {
+        deletePromises.push(
+            apiFetch(`/books/${bookId}`, {
+                method: 'DELETE'
+            }).catch(error => ({
+                status: 'rejected',
+                reason: error.message
+            }))
+        );
+    }
+    
+    try {
+        // Wait for all delete operations to complete
+        const results = await Promise.allSettled(deletePromises);
+        const failedDeletes = results.filter(r => r.status === 'rejected');
+        
+        // Show appropriate notification based on results
+        if (failedDeletes.length > 0) {
+            console.error('Some books could not be deleted:', failedDeletes);
+            showNotification(
+                `${failedDeletes.length} of ${selectedBookIds.size} books could not be deleted.`,
+                'error'
+            );
+        } else {
+            showNotification(
+                `${selectedBookIds.size} book(s) deleted successfully`,
+                'success'
+            );
         }
-        if (universalConfirmNo) universalConfirmNo.onclick = () => {
-            if (universalConfirmModal) universalConfirmModal.style.display = 'none';
-        };
+        
+        // Refresh the UI
+        clearLibrarySelections();
+        await loadLibraryWithFilters();
+    } catch (error) {
+        console.error('Error in bulk delete operation:', error);
+        showNotification(
+            error.message || 'An error occurred while deleting books. Please try again.',
+            'error'
+        );
+    }
+}
+
+// Initialize bulk delete button and confirmation dialog
+if (libraryBulkDelete) {
+    libraryBulkDelete.onclick = () => {
+        if (selectedBookIds.size === 0) return;
+        
+        // Show confirmation dialog
+        if (universalConfirmModal && universalConfirmTitle && universalConfirmMessage) {
+            universalConfirmTitle.textContent = 'Delete Selected Books';
+            universalConfirmMessage.textContent = `Are you sure you want to delete ${selectedBookIds.size} selected book(s)?`;
+            universalConfirmModal.style.display = 'block';
+            
+            // Set up confirmation handler
+            const confirmHandler = async () => {
+                universalConfirmModal.style.display = 'none';
+                await handleBulkDelete();
+                // Remove the event listener after use
+                if (universalConfirmYes) {
+                    universalConfirmYes.removeEventListener('click', confirmHandler);
+                }
+            };
+            
+            // Set up cancel handler
+            const cancelHandler = () => {
+                universalConfirmModal.style.display = 'none';
+                if (universalConfirmYes) {
+                    universalConfirmYes.removeEventListener('click', confirmHandler);
+                }
+                if (universalConfirmNo) {
+                    universalConfirmNo.removeEventListener('click', cancelHandler);
+                }
+            };
+            
+            // Add event listeners
+            if (universalConfirmYes) {
+                universalConfirmYes.addEventListener('click', confirmHandler);
+            }
+            if (universalConfirmNo) {
+                universalConfirmNo.addEventListener('click', cancelHandler);
+            }
+        } else {
+            // Fallback to browser confirm if modal elements not found
+            handleBulkDelete();
+        }
     };
 }
 
@@ -1110,61 +1274,63 @@ if (libraryBulkExport) {
 // Load issued books from the server
 let issuedBooksData = [];
 
+/**
+ * Load all issued books with optional class filtering
+ */
 async function loadIssuedBooks() {
+    const tableBody = document.getElementById('issued-books-list');
+    
     try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            throw new Error('Authentication required. Please log in again.');
-        }
-        
         // Show loading state
-        const tableBody = document.getElementById('issued-books-list');
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2 mb-0">Loading issued books...</p>
-            </td></tr>`;
+            tableBody.innerHTML = `
+                <tr><td colspan="8" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 mb-0">Loading issued books...</p>
+                </td></tr>`;
         }
         
         // Get selected class from filter
         const classFilter = document.getElementById('class-filter');
         const selectedClass = classFilter ? classFilter.value : 'All';
         
-        const response = await fetch(`${API_CONFIG.BASE_URL}/api/library/issued?groupByClass=true${selectedClass !== 'All' ? `&className=${encodeURIComponent(selectedClass)}` : ''}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+        // Build query parameters
+        const params = new URLSearchParams({
+            groupByClass: 'true'
         });
         
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        if (selectedClass !== 'All') {
+            params.append('className', selectedClass);
         }
         
-        const result = await response.json();
-        console.log('API Response:', result);
+        // Make API request using apiFetch
+        const result = await apiFetch(`/library/issued?${params.toString()}`);
         
         // Handle both response formats: {data: [...]} and direct array
-        issuedBooksData = Array.isArray(result) ? result : (result.data || []);
+        issuedBooksData = Array.isArray(result) ? result : (result?.data || []);
         
         // Update class filter dropdown
         updateClassFilter(issuedBooksData);
         
         // Display books
         displayIssuedBooks(issuedBooksData);
+        
     } catch (error) {
         console.error('Error loading issued books:', error);
-        const tableBody = document.getElementById('issued-books-list');
+        const errorMessage = error.message || 'Failed to load issued books. Please try again later.';
+        
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                Failed to load issued books: ${error.message}
-            </td></tr>`;
+            tableBody.innerHTML = `
+                <tr><td colspan="8" class="text-center text-danger py-4">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    ${errorMessage}
+                </td></tr>`;
         }
-        showNotification(`Error: ${error.message}`, 'error');
+        
+        // Show error notification
+        showNotification(errorMessage, 'error');
     }
 }
 
@@ -1546,8 +1712,10 @@ function getStatusClass(returned) {
     return returned ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
 }
 
-// Handle returning a book
-function handleReturnBook(event) {
+/**
+ * Handle returning a borrowed book
+ */
+async function handleReturnBook(event) {
     event.preventDefault();
     
     const button = event.currentTarget;
@@ -1557,104 +1725,140 @@ function handleReturnBook(event) {
     const borrowerName = button.getAttribute('data-borrower');
     const fine = parseFloat(button.getAttribute('data-fine')) || 0;
     
-    // Set up the return modal
+    // Get modal elements
     const modal = document.getElementById('returnBookModal');
+    if (!modal) {
+        console.error('Return book modal not found');
+        showNotification('Error: Return book modal not found', 'error');
+        return;
+    }
+    
     const modalInstance = new bootstrap.Modal(modal);
     
     // Update modal content
-    modal.querySelector('.book-title').textContent = bookTitle;
-    modal.querySelector('.borrower-name').textContent = borrowerName;
-    modal.querySelector('.fine-amount').textContent = `KES ${fine.toFixed(2)}`;
+    const bookTitleEl = modal.querySelector('.book-title');
+    const borrowerNameEl = modal.querySelector('.borrower-name');
+    const fineAmountEl = modal.querySelector('.fine-amount');
     
-    // Set up the form submission
+    if (bookTitleEl) bookTitleEl.textContent = bookTitle;
+    if (borrowerNameEl) borrowerNameEl.textContent = borrowerName;
+    if (fineAmountEl) fineAmountEl.textContent = `KES ${fine.toFixed(2)}`;
+    
+    // Get form elements
     const returnForm = document.getElementById('returnBookForm');
+    if (!returnForm) {
+        console.error('Return form not found');
+        return;
+    }
+    
     const submitBtn = returnForm.querySelector('button[type="submit"]');
     const cancelBtn = returnForm.querySelector('button[type="button"]');
     const finePaidInput = returnForm.querySelector('#finePaid');
     
-    // Reset form
+    // Reset form state
     returnForm.reset();
-    finePaidInput.max = fine;
-    finePaidInput.value = fine.toFixed(2);
+    if (finePaidInput) {
+        finePaidInput.max = fine;
+        finePaidInput.value = fine.toFixed(2);
+    }
     
     // Show/hide fine section based on whether there's a fine
     const fineSection = modal.querySelector('.fine-section');
-    if (fine > 0) {
-        fineSection.style.display = 'block';
-    } else {
-        fineSection.style.display = 'none';
+    if (fineSection) {
+        fineSection.style.display = fine > 0 ? 'block' : 'none';
     }
     
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        const finePaid = parseFloat(finePaidInput.value) || 0;
+        if (!submitBtn || !cancelBtn) return;
+        
+        const finePaid = finePaidInput ? parseFloat(finePaidInput.value) || 0 : 0;
         
         // Validate fine paid
         if (finePaid > fine) {
-            alert('Fine paid cannot be more than the fine amount');
+            showNotification('Fine paid cannot be more than the fine amount', 'error');
             return;
         }
         
         // Disable form elements
         submitBtn.disabled = true;
         cancelBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        const originalButtonText = submitBtn.innerHTML;
+        
+        if (submitBtn) {
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        }
         
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('Please log in to return books');
-            }
+            // Prepare return data
+            const returnData = {
+                finePaid: finePaid,
+                remarks: document.getElementById('returnRemarks')?.value || ''
+            };
             
-            const response = await fetch(`${API_CONFIG.BASE_URL}/api/library/return/${issueId}`, {
+            // Make API request using apiFetch
+            const result = await apiFetch(`/library/return/${issueId}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
-                    bookId,
-                    finePaid: finePaid
-                })
+                body: JSON.stringify(returnData)
             });
             
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to return book');
-            }
-            
             // Show success message
-            showNotification('Book returned successfully!', 'success');
+            showNotification('Book returned successfully', 'success');
             
             // Close the modal
-            modalInstance.hide();
+            if (modalInstance && typeof modalInstance.hide === 'function') {
+                modalInstance.hide();
+            }
             
-            // Refresh the issued books list
-            loadIssuedBooks();
+            // Reload the issued books list
+            await loadIssuedBooks();
             
         } catch (error) {
             console.error('Error returning book:', error);
-            showNotification(`Error: ${error.message}`, 'error');
+            showNotification(
+                error.message || 'Failed to return book. Please try again.',
+                'error'
+            );
             
-            // Re-enable form elements
-            submitBtn.disabled = false;
-            cancelBtn.disabled = false;
-            submitBtn.innerHTML = 'Confirm Return';
+            // Re-enable form elements on error
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalButtonText || 'Confirm Return';
+            }
+            if (cancelBtn) {
+                cancelBtn.disabled = false;
+            }
         }
     };
     
-    // Remove previous event listeners to prevent duplicates
+    // Clean up any existing event listeners to prevent duplicates
     const newForm = returnForm.cloneNode(true);
     returnForm.parentNode.replaceChild(newForm, returnForm);
     
     // Add event listener to the new form
     newForm.addEventListener('submit', handleSubmit);
     
+    // Set up cancel button
+    if (cancelBtn) {
+        cancelBtn.onclick = () => {
+            if (modalInstance && typeof modalInstance.hide === 'function') {
+                modalInstance.hide();
+            }
+        };
+    }
+    
     // Show the modal
-    modalInstance.show();
+    if (modalInstance && typeof modalInstance.show === 'function') {
+        modalInstance.show();
+    } else {
+        console.error('Modal instance does not have show method');
+        showNotification('Error: Unable to open return dialog', 'error');
+    }
 }
 
 // Show notification function
