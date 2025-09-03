@@ -1,6 +1,53 @@
 // Library Management Logic
 // API configuration is imported from config.js (available as window.API_CONFIG)
-// The apiFetch utility is also available from config.js
+
+/**
+ * API fetch wrapper that handles authentication and error handling
+ * @param {string} url - The API endpoint URL
+ * @param {Object} options - Fetch options
+ * @returns {Promise<any>} - The parsed JSON response
+ */
+async function apiFetch(url, options = {}) {
+    const token = localStorage.getItem('token');
+    const defaultHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+    };
+
+    // Merge headers
+    const headers = {
+        ...defaultHeaders,
+        ...(options.headers || {})
+    };
+
+    try {
+        const response = await fetch(`${window.API_CONFIG?.BASE_URL || ''}${url}`, {
+            ...options,
+            headers
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Handle unauthorized
+                window.location.href = '/login.html';
+                return Promise.reject(new Error('Unauthorized'));
+            }
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'API request failed');
+        }
+
+        // Handle empty responses
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
+}
 
 // DOM Elements
 const libraryForm = document.getElementById('library-form');
@@ -1351,55 +1398,82 @@ async function loadIssuedBooks() {
     
     try {
         // Show loading state
-        if (tableBody) {
-            tableBody.innerHTML = `
-                <tr><td colspan="8" class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div class="spinner-border text-primary me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span>Loading issued books...</span>
                     </div>
-                    <p class="mt-2 mb-0">Loading issued books...</p>
-                </td></tr>`;
-        }
+                </td>
+            </tr>`;
         
-        // Get selected class from filter
         const classFilter = document.getElementById('class-filter');
         const selectedClass = classFilter ? classFilter.value : 'All';
         
         // Build query parameters
         const params = new URLSearchParams({
-            groupByClass: 'true'
+            groupByClass: 'true',
+            _t: new Date().getTime() // Cache buster
         });
         
-        if (selectedClass !== 'All') {
+        if (selectedClass && selectedClass !== 'All') {
             params.append('className', selectedClass);
         }
         
-        // Make API request using apiFetch
-        const result = await apiFetch(`/library/issued?${params.toString()}`);
+        // Make API request using apiFetch with error handling
+        let result;
+        try {
+            result = await apiFetch(`/library/issued?${params.toString()}`);
+        } catch (error) {
+            // Fallback to alternative endpoint if primary fails
+            console.warn('Primary endpoint failed, trying fallback...', error);
+            result = await apiFetch(`/library/books/issued?${params.toString()}`);
+        }
         
-        // Handle both response formats: {data: [...]} and direct array
-        issuedBooksData = Array.isArray(result) ? result : (result?.data || []);
+        // Handle various response formats
+        if (!result) {
+            throw new Error('Empty response from server');
+        }
         
-        // Update class filter dropdown
-        updateClassFilter(issuedBooksData);
+        // Normalize response data
+        issuedBooksData = Array.isArray(result) 
+            ? result 
+            : Array.isArray(result.data) 
+                ? result.data 
+                : [];
         
-        // Display books
-        displayIssuedBooks(issuedBooksData);
+        console.log('Loaded issued books:', issuedBooksData.length);
+        
+        // Update class filter dropdown if it exists
+        if (classFilter) {
+            updateClassFilter(issuedBooksData);
+        }
+        
+        // Display books if we have data
+        if (issuedBooksData.length > 0) {
+            displayIssuedBooks(issuedBooksData);
+        } else {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <i class="fas fa-book-open me-2"></i>
+                        No books are currently issued out.
+                    </td>
+                </tr>`;
+        }
         
     } catch (error) {
         console.error('Error loading issued books:', error);
-        const errorMessage = error.message || 'Failed to load issued books. Please try again later.';
-        
-        if (tableBody) {
-            tableBody.innerHTML = `
-                <tr><td colspan="8" class="text-center text-danger py-4">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    ${errorMessage}
-                </td></tr>`;
-        }
-        
-        // Show error notification
-        showNotification(errorMessage, 'error');
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-danger py-4">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Failed to load issued books. ${error.message || 'Please try again later.'}
+                </td>
+            </tr>`;
     }
 }
 
@@ -1513,61 +1587,61 @@ function filterIssuedBooks() {
     const normalizedSelectedClass = normalizeClassName(selectedClass);
     const tableBody = document.getElementById('issued-books-list');
     
-    if (!tableBody) return;
+    if (!tableBody) {
+        console.warn('Issued books table body not found');
+        return;
+    }
     
     const rows = tableBody.querySelectorAll('tr');
     let hasVisibleRows = false;
+    let currentGroup = null;
+    let groupHasVisibleRows = false;
     
-    console.log('Selected class:', selectedClass, 'Normalized:', normalizedSelectedClass);
+    console.log('Filtering with class:', selectedClass, 'and search term:', searchTerm);
     
+    // Process all rows and show/hide as needed
     rows.forEach(row => {
         if (row.classList.contains('table-group')) {
             // Handle group headers
-            const groupClass = row.getAttribute('data-class') || '';
-            const normalizedGroupClass = normalizeClassName(groupClass);
-            
-            if (selectedClass !== 'All' && normalizedGroupClass !== normalizedSelectedClass) {
-                row.style.display = 'none';
-                return;
-            }
-            row.style.display = '';
-            hasVisibleRows = true;
-            return;
-        }
-        
-        // Skip if it's a no-results row
-        if (row.classList.contains('no-results-message')) {
-            row.style.display = 'none';
-            return;
-        }
-        
-        // Get the book data from data attributes
-        const bookClass = row.getAttribute('data-class') || '';
-        const normalizedBookClass = normalizeClassName(bookClass);
-        const bookTitle = (row.querySelector('td:nth-child(1)')?.textContent || '').toLowerCase();
-        const borrowerName = (row.querySelector('td:nth-child(2)')?.textContent || '').toLowerCase();
-        
-        // Check if the row matches the search term and selected class
-        const matchesSearch = !searchTerm || 
-                            bookTitle.includes(searchTerm) || 
-                            borrowerName.includes(searchTerm) ||
-                            bookClass.toLowerCase().includes(searchTerm);
-        
-        const matchesClass = selectedClass === 'All' || 
-                           normalizedBookClass === normalizedSelectedClass;
-        
-        if (matchesSearch && matchesClass) {
-            row.style.display = '';
-            hasVisibleRows = true;
+            currentGroup = row;
+            groupHasVisibleRows = false; // Reset for new group
+            row.style.display = 'none'; // Hide by default, show if any children are visible
         } else {
-            row.style.display = 'none';
+            // Handle book rows
+            const rowClass = row.getAttribute('data-class') || '';
+            const normalizedRowClass = normalizeClassName(rowClass);
+            const bookTitle = (row.getAttribute('data-title') || '').toLowerCase();
+            const studentName = (row.getAttribute('data-student') || '').toLowerCase();
+            
+            // Check if row matches filters
+            const classMatches = selectedClass === 'All' || normalizedRowClass === normalizedSelectedClass;
+            const searchMatches = !searchTerm || 
+                bookTitle.includes(searchTerm) || 
+                studentName.includes(searchTerm);
+                
+            if (classMatches && searchMatches) {
+                row.style.display = '';
+                hasVisibleRows = true;
+                groupHasVisibleRows = true;
+                if (currentGroup) {
+                    currentGroup.style.display = '';
+                }
+            } else {
+                row.style.display = 'none';
+            }
         }
     });
     
     // Show no results message if no rows are visible
-    const noResultsRow = tableBody.querySelector('.no-results-message');
+    const noResultsRow = tableBody.querySelector('tr.no-results');
+    if (noResultsRow) {
+        noResultsRow.style.display = hasVisibleRows ? 'none' : '';
+    }
+    
+    // If no rows are visible, show a more descriptive message
     if (!hasVisibleRows) {
-        if (!noResultsRow) {
+        const noResultsMessage = tableBody.querySelector('.no-results-message');
+        if (!noResultsMessage) {
             const tr = document.createElement('tr');
             tr.className = 'no-results-message';
             tr.innerHTML = `
@@ -1579,10 +1653,13 @@ function filterIssuedBooks() {
                 </td>`;
             tableBody.appendChild(tr);
         } else {
-            noResultsRow.style.display = '';
+            noResultsMessage.style.display = '';
         }
-    } else if (noResultsRow) {
-        noResultsRow.style.display = 'none';
+    } else {
+        const noResultsMessage = tableBody.querySelector('.no-results-message');
+        if (noResultsMessage) {
+            noResultsMessage.style.display = 'none';
+        }
     }
 }
 
