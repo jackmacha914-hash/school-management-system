@@ -16,12 +16,22 @@ class StudentManagement {
 
     async loadStudents() {
         try {
+            // Check if a class is selected
+            const classSelect = document.getElementById('class-select');
+            if (classSelect && !classSelect.value) {
+                console.log('No class selected, skipping student load');
+                this.students = [];
+                this.renderStudentTable(); // Clear the table
+                return;
+            }
+            
             // Try to load from localStorage first
             const savedStudents = localStorage.getItem('students');
             
             if (savedStudents) {
                 this.students = JSON.parse(savedStudents);
                 console.log('Loaded students from localStorage');
+                this.renderStudentTable();
                 return;
             }
             
@@ -36,6 +46,7 @@ class StudentManagement {
                 if (Array.isArray(data) && data.length > 0) {
                     this.students = data;
                     this.saveToLocalStorage();
+                    this.renderStudentTable();
                     return;
                 }
             } catch (apiError) {
@@ -45,11 +56,13 @@ class StudentManagement {
             // Fall back to sample data if no data in localStorage or API
             this.loadSampleData();
             this.saveToLocalStorage();
+            this.renderStudentTable();
             this.showNotification('Using sample data. API endpoint not available.', 'info');
             
         } catch (error) {
             console.error('Error loading students:', error);
             this.loadSampleData();
+            this.renderStudentTable();
             this.showNotification('Using sample data. Could not load from server.', 'warning');
         }
     }

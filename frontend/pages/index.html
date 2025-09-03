@@ -3873,18 +3873,38 @@
                 if (response.status === 200) {
                   // Load all dashboard data
     async function loadDashboardData() {
+        console.log('Loading dashboard data...');
+        
+        // Show loading state for all stats
+        const statElements = document.querySelectorAll('.stat-value');
+        statElements.forEach(el => {
+            if (!el.id.includes('percentage')) {
+                el.textContent = '...';
+            }
+        });
+        
         try {
+            // Load all data in parallel
             await Promise.all([
-                loadStudentsCount(),
-                loadTeachersCount(),
-                loadBooksCount(),
-                loadClubsCount(),
-                loadTotalFees(),
-                loadTodayAttendance()
+                loadStudentsCount().catch(e => console.error('Error in loadStudentsCount:', e)),
+                loadTeachersCount().catch(e => console.error('Error in loadTeachersCount:', e)),
+                loadBooksCount().catch(e => console.error('Error in loadBooksCount:', e)),
+                loadClubsCount().catch(e => console.error('Error in loadClubsCount:', e)),
+                loadTotalFees().catch(e => console.error('Error in loadTotalFees:', e)),
+                loadTodayAttendance().catch(e => console.error('Error in loadTodayAttendance:', e))
             ]);
+            
             console.log('Dashboard data loaded successfully');
         } catch (error) {
-            console.error('Error loading dashboard data:', error);
+            console.error('Error in dashboard data loading:', error);
+            // Individual error handling is done in each function
+        } finally {
+            // Ensure all loading states are cleared
+            statElements.forEach(el => {
+                if (el.textContent === '...') {
+                    el.textContent = '-';
+                }
+            });
         }
     }    alert('Registration failed: ' + error.message);
             }
@@ -4890,229 +4910,229 @@
         }
     }
     
-    // Load students count
-    async function loadStudentsCount() {
-        try {
-            const token = localStorage.getItem('token');
-            // Try to fetch students from the correct endpoint
-            const response = await fetch('https://school-management-system-av07.onrender.com/api/students', {
-                method: 'GET',
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            const students = Array.isArray(data) ? data : [];
-            document.getElementById('student-count').textContent = students.length;
-            return true;
-            
-        } catch (error) {
-            console.error('Error loading students:', error);
-            document.getElementById('student-count').textContent = '-';
-            return false;
-        }
-    }
-    
     // Load teachers count
     async function loadTeachersCount() {
+        const countElement = document.getElementById('teacher-count');
+        if (!countElement) return false;
+        
+        // Show loading state
+        countElement.textContent = '...';
+        
+        // First try to get from localStorage
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                console.error('No token found in localStorage');
-                throw new Error('Authentication required');
+            const savedCount = localStorage.getItem('teachersCount');
+            if (savedCount) {
+                countElement.textContent = savedCount;
+                return true;
             }
             
-            // First, try to get the count from the server
+            const savedTeachers = localStorage.getItem('teachers');
+            if (savedTeachers) {
+                const teachers = JSON.parse(savedTeachers);
+                if (Array.isArray(teachers)) {
+                    countElement.textContent = teachers.length.toString();
+                    return true;
+                }
+            }
+        } catch (e) {
+            console.error('Error parsing saved teachers:', e);
+        }
+        
+        try {
+            const token = localStorage.getItem('token');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
+            // Try to fetch teachers count from the server
             const response = await fetch('https://school-management-system-av07.onrender.com/api/teachers/count', {
                 method: 'GET',
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
+                headers: {
+                    ...headers,
                     'Content-Type': 'application/json'
                 }
             });
             
             if (response.ok) {
                 const data = await response.json();
-                if (data && typeof data.count !== 'undefined') {
-                    document.getElementById('teacher-count').textContent = data.count;
-                    return true;
+                const count = data.count || 0;
+                countElement.textContent = count.toString();
+                
+                // Save to localStorage for offline use
+                try {
+                    localStorage.setItem('teachersCount', count.toString());
+                } catch (e) {
+                    console.error('Error saving to localStorage:', e);
                 }
+                
+                return true;
             }
             
             // If count endpoint fails, try to fetch all teachers and count them
             const teachersResponse = await fetch('https://school-management-system-av07.onrender.com/api/teachers', {
                 method: 'GET',
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
+                headers: {
+                    ...headers,
                     'Content-Type': 'application/json'
                 }
             });
             
             if (teachersResponse.ok) {
                 const data = await teachersResponse.json();
-                let teachers = [];
+                const teachers = Array.isArray(data) ? data : (data.teachers || data.data || []);
+                const count = teachers.length;
+                countElement.textContent = count.toString();
                 
-                // Handle different response formats
-                if (Array.isArray(data)) {
-                    teachers = data;
-                } else if (data && Array.isArray(data.teachers)) {
-                    teachers = data.teachers;
-                } else if (data && Array.isArray(data.data)) {
-                    teachers = data.data;
+                // Save to localStorage for offline use
+                try {
+                    localStorage.setItem('teachersCount', count.toString());
+                    localStorage.setItem('teachers', JSON.stringify(teachers));
+                } catch (e) {
+                    console.error('Error saving to localStorage:', e);
                 }
                 
-                // Filter out non-teacher staff if needed
-                const actualTeachers = teachers.filter(teacher => 
-                    teacher.role === 'teacher' || 
-                    teacher.type === 'teacher' ||
-                    teacher.userType === 'teacher'
-                );
-                
-                const count = actualTeachers.length > 0 ? actualTeachers.length : teachers.length;
-                document.getElementById('teacher-count').textContent = count;
                 return true;
             }
             
-            throw new Error('Failed to fetch teacher count');
-            
-            
-            for (const endpoint of endpoints) {
-                try {
-                    const url = `https://school-management-system-av07.onrender.com${endpoint}`;
-                    console.log(`Trying endpoint: ${url}`);
-                    
-                    const response = await fetch(url, {
-                        method: 'GET',
-                        headers: { 
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('Teachers API response:', data);
-                        
-                        // Handle different response formats
-                        let teachers = [];
-                        if (Array.isArray(data)) {
-                            teachers = data;
-                        } else if (data && Array.isArray(data.teachers)) {
-                            teachers = data.teachers;
-                        } else if (data && Array.isArray(data.data)) {
-                            teachers = data.data;
-                        }
-                        
-                        document.getElementById('teacher-count').textContent = teachers.length;
-                        return true;
-                    } else {
-                        console.warn(`Endpoint ${endpoint} returned status: ${response.status}`);
-                        lastError = new Error(`HTTP error! status: ${response.status}`);
-                    }
-                } catch (err) {
-                    console.warn(`Error with endpoint ${endpoint}:`, err);
-                    lastError = err;
-                }
-            }
-            
-            // If we get here, all endpoints failed
-            throw lastError || new Error('All teacher endpoints failed');
+            throw new Error('Failed to load teachers data');
             
         } catch (error) {
-            console.error('Error loading teachers:', error);
-            document.getElementById('teacher-count').textContent = '-';
+            console.error('Error loading teachers count:', error);
+            // Try to show cached count if available
+            try {
+                const cachedCount = localStorage.getItem('teachersCount');
+                if (cachedCount) {
+                    countElement.textContent = cachedCount;
+                    return true;
+                }
+            } catch (e) {
+                console.error('Error accessing localStorage:', e);
+            }
+            
+            countElement.textContent = '-';
             return false;
         }
     }
     
-    // Load books count and issued books
-    async function loadBooksCount() {
-        console.log('=== loadBooksCount function STARTED ===');
+    // Load students count
+    async function loadStudentsCount() {
+        const countElement = document.getElementById('students-count');
+        if (!countElement) return false;
+        
+        // Show loading state
+        countElement.textContent = '...';
+        
+        // First try to get from localStorage
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                console.error('No authentication token found');
-                return;
+            const savedCount = localStorage.getItem('studentsCount');
+            if (savedCount) {
+                countElement.textContent = savedCount;
+                return true;
             }
             
-            console.log('Fetching books from API...');
-            const response = await fetch('https://school-management-system-av07.onrender.com/api/books', {
+            const savedStudents = localStorage.getItem('students');
+            if (savedStudents) {
+                const students = JSON.parse(savedStudents);
+                if (Array.isArray(students)) {
+                    countElement.textContent = students.length.toString();
+                    return true;
+                }
+            }
+        } catch (e) {
+            console.error('Error parsing saved students:', e);
+        }
+        
+        try {
+            const token = localStorage.getItem('token');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
+            // Try to fetch students count from the server
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/students/count', {
                 method: 'GET',
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
+                headers: {
+                    ...headers,
                     'Content-Type': 'application/json'
                 }
             });
             
+            if (response.ok) {
+                const data = await response.json();
+                const count = data.count || 0;
+                countElement.textContent = count.toString();
+                
+                // Save to localStorage for offline use
+                try {
+                    localStorage.setItem('studentsCount', count.toString());
+                } catch (e) {
+                    console.error('Error saving to localStorage:', e);
+                }
+                
+                return true;
+            }
+            
+            // If count endpoint fails, try to fetch all students and count them
+            const studentsResponse = await fetch('https://school-management-system-av07.onrender.com/api/students', {
+                method: 'GET',
+                headers: {
+                    ...headers,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (studentsResponse.ok) {
+                const data = await studentsResponse.json();
+                const students = Array.isArray(data) ? data : (data.students || data.data || []);
+                const count = students.length;
+                countElement.textContent = count.toString();
+                
+                // Save to localStorage for offline use
+                try {
+                    localStorage.setItem('studentsCount', count.toString());
+                    localStorage.setItem('students', JSON.stringify(students));
+                } catch (e) {
+                    console.error('Error saving to localStorage:', e);
+                }
+                
+                return true;
+            }
+            
+            throw new Error('Failed to load students data');
+            
+        } catch (error) {
+            console.error('Error loading students count:', error);
+            // Try to show cached count if available
+            try {
+                const cachedCount = localStorage.getItem('studentsCount');
+                if (cachedCount) {
+                    countElement.textContent = cachedCount;
+                    return true;
+                }
+            } catch (e) {
+                console.error('Error accessing localStorage:', e);
+            }
+            
+            countElement.textContent = '-';
+            return false;
+        }
+    }
+    
+    // Load books count
+    async function loadBooksCount() {
+        try {
+            console.log('=== loadBooksCount function STARTED ===');
+            const token = localStorage.getItem('token');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
+            // Try to fetch books from the server
+            const response = await fetch('https://school-management-system-av07.onrender.com/api/books', {
+                method: 'GET',
+                headers: headers
+            });
+            
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('API Error:', errorText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
-            console.log('Books API response:', data);
-            
-            // Handle different response formats
-            let books = [];
-            if (Array.isArray(data)) {
-                books = data;
-            } else if (data && Array.isArray(data.data)) {
-                books = data.data;
-            } else if (data.books) {
-                books = data.books;
-            } else if (typeof data === 'object' && data !== null) {
-                // If it's an object but not an array, try to extract books from it
-                books = Object.values(data).filter(item => item && typeof item === 'object');
-            }
-            
-            // Log detailed information about the first few books
-            if (books.length > 0) {
-                console.log('=== DEBUG: First 3 books structure ===');
-                books.slice(0, 3).forEach((book, index) => {
-                    console.log(`\nBook ${index + 1} fields:`, Object.keys(book));
-                    console.log(`Book ${index + 1} data:`, {
-                        id: book._id || book.id,
-                        title: book.title || 'No title',
-                        status: book.status,
-                        borrowerId: book.borrowerId,
-                        borrower: book.borrower,
-                        borrowerName: book.borrowerName,
-                        issuedTo: book.issuedTo,
-                        copies: book.copies,
-                        // Include any other relevant fields
-                        ...Object.entries(book).reduce((acc, [key, value]) => {
-                            if (['_id', 'id', 'title', 'status', 'borrowerId', 'borrower', 'borrowerName', 'issuedTo', 'copies'].includes(key)) {
-                                return acc;
-                            }
-                            return { ...acc, [key]: value };
-                        }, {})
-                    });
-                });
-                console.log('=== END DEBUG ===');
-            }
-            
-            console.log('Processing books. Total books found:', books.length);
-            
-            // Log the first few books to see their structure
-            if (books.length > 0) {
-                console.log('Sample book structure:', JSON.stringify(books[0], null, 2));
-                
-                // Log all available fields in the first book
-                const sampleBook = books[0];
-                console.log('Available fields in book object:', Object.keys(sampleBook));
-                
-                // Log any fields that might indicate a book is issued
-                const possibleIssuedFields = ['status', 'borrowerId', 'borrower', 'borrowerName', 'issuedTo', 'checkedOut'];
-                const presentFields = possibleIssuedFields.filter(field => field in sampleBook);
-                console.log('Fields that might indicate issued status:', presentFields);
-            }
+            const books = Array.isArray(data) ? data : (data.books || data.data || []);
             
             // Calculate total books (sum of all copies)
             const totalBooks = books.reduce((total, book) => {
@@ -5201,10 +5221,6 @@
             // Try to get today's attendance
             const response = await fetch(`https://school-management-system-av07.onrender.com/api/attendance?date=${todayFormatted}`, {
                 method: 'GET',
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
             });
             
             if (!response.ok) {
@@ -5284,18 +5300,38 @@
     
     // Load all dashboard data
     async function loadDashboardData() {
+        console.log('Loading dashboard data...');
+        
+        // Show loading state for all stats
+        const statElements = document.querySelectorAll('.stat-value');
+        statElements.forEach(el => {
+            if (!el.id.includes('percentage')) {
+                el.textContent = '...';
+            }
+        });
+        
         try {
+            // Load all data in parallel
             await Promise.all([
-                loadStudentsCount(),
-                loadTeachersCount(),
-                loadBooksCount(),
-                loadClubsCount(),
-                loadTotalFees(),
-                loadTodayAttendance()
+                loadStudentsCount().catch(e => console.error('Error in loadStudentsCount:', e)),
+                loadTeachersCount().catch(e => console.error('Error in loadTeachersCount:', e)),
+                loadBooksCount().catch(e => console.error('Error in loadBooksCount:', e)),
+                loadClubsCount().catch(e => console.error('Error in loadClubsCount:', e)),
+                loadTotalFees().catch(e => console.error('Error in loadTotalFees:', e)),
+                loadTodayAttendance().catch(e => console.error('Error in loadTodayAttendance:', e))
             ]);
+            
             console.log('Dashboard data loaded successfully');
         } catch (error) {
-            console.error('Error loading dashboard data:', error);
+            console.error('Error in dashboard data loading:', error);
+            // Individual error handling is done in each function
+        } finally {
+            // Ensure all loading states are cleared
+            statElements.forEach(el => {
+                if (el.textContent === '...') {
+                    el.textContent = '-';
+                }
+            });
         }
     }
     
@@ -5833,6 +5869,8 @@
             }
         });
     </script>
+    
+    <!-- Load admin scripts -->
+    <script src="js/admin.js"></script>
 </body>
-
 </html>
