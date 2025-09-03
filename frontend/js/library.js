@@ -1248,27 +1248,96 @@ if (libraryBulkDelete) {
     };
 }
 
-// Bulk Export
-if (libraryBulkExport) {
-    libraryBulkExport.onclick = async function() {
-        if (selectedBookIds.size === 0) return;
+/**
+ * Handle bulk export of selected books to CSV
+ */
+async function handleBulkExport() {
+    if (selectedBookIds.size === 0) {
+        showNotification('Please select at least one book to export', 'warning');
+        return;
+    }
+
+    try {
         const token = localStorage.getItem('token');
-        let url = 'https://school-management-system-av07.onrender.com/api/library';
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-        const books = await res.json();
-        const selected = books.filter(b => selectedBookIds.has(b._id));
-        let csv = 'Title,Author,Description\n';
-        selected.forEach(b => {
-            csv += `${b.title},${b.author},${b.description || ''}\n`;
+        if (!token) {
+            throw new Error('Authentication required. Please log in again.');
+        }
+
+        // Show loading state
+        const originalText = libraryBulkExport.innerHTML;
+        libraryBulkExport.disabled = true;
+        libraryBulkExport.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Exporting...';
+
+        // Fetch all books
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/library`, { 
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
         });
-        const blob = new Blob([csv], { type: 'text/csv' });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch books: ${response.status} ${response.statusText}`);
+        }
+
+        const books = await response.json();
+        const selectedBooks = Array.isArray(books) 
+            ? books.filter(book => book && book._id && selectedBookIds.has(book._id))
+            : [];
+
+        if (selectedBooks.length === 0) {
+            throw new Error('No valid books found for export');
+        }
+
+        // Create CSV content
+        const headers = ['Title', 'Author', 'ISBN', 'Status', 'Available', 'Genre'];
+        let csvContent = headers.join(',') + '\n';
+
+        selectedBooks.forEach(book => {
+            const row = [
+                `"${(book.title || '').replace(/"/g, '""')}"`,
+                `"${(book.author || '').replace(/"/g, '""')}"`,
+                `"${(book.isbn || '').replace(/"/g, '""')}"`,
+                `"${(book.status || '').replace(/"/g, '""')}"`,
+                `"${book.available ? 'Yes' : 'No'}"`,
+                `"${(book.genre || '').replace(/"/g, '""')}"`
+            ];
+            csvContent += row.join(',') + '\n';
+        });
+
+        // Create and trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'selected_books.csv';
+        link.setAttribute('href', url);
+        link.setAttribute('download', `library_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.display = 'none';
+        
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
-    };
+        
+        // Clean up
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+
+        showNotification(`Exported ${selectedBooks.length} book(s) successfully`, 'success');
+    } catch (error) {
+        console.error('Export error:', error);
+        showNotification(error.message || 'Failed to export books. Please try again.', 'error');
+    } finally {
+        // Restore button state
+        if (libraryBulkExport) {
+            libraryBulkExport.disabled = false;
+            libraryBulkExport.innerHTML = originalText || 'Export Selected';
+        }
+    }
+}
+
+// Initialize bulk export button
+if (libraryBulkExport) {
+    libraryBulkExport.addEventListener('click', handleBulkExport);
 }
 
 // Load issued books from the server
