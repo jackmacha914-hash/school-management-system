@@ -1449,12 +1449,12 @@ async function loadIssuedBooks() {
         // Make API request using apiFetch with error handling
         let result;
         try {
-            result = await apiFetch(`/library/issued?${params.toString()}`);
+            result = await apiFetch(`/api/library/issued?${params.toString()}`);
         } catch (error) {
             console.warn('Primary endpoint failed, trying fallback...', error);
             try {
                 // Fallback to alternative endpoint if primary fails
-                result = await apiFetch(`/library/books/issued?${params.toString()}`);
+                result = await apiFetch(`/api/library/issued?${params.toString()}`);
             } catch (fallbackError) {
                 console.error('All API endpoints failed:', fallbackError);
                 throw new Error('Unable to load issued books. Please check your connection and try again.');
