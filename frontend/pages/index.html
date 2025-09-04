@@ -3871,44 +3871,23 @@
                 const result = await response.json();
                 
                 if (response.status === 200) {
-                  // Load all dashboard data
-    async function loadDashboardData() {
-        console.log('Loading dashboard data...');
-        
-        // Show loading state for all stats
-        const statElements = document.querySelectorAll('.stat-value');
-        statElements.forEach(el => {
-            if (!el.id.includes('percentage')) {
-                el.textContent = '...';
-            }
-        });
-        
-        try {
-            // Load all data in parallel
-            await Promise.all([
-                loadStudentsCount().catch(e => console.error('Error in loadStudentsCount:', e)),
-                loadTeachersCount().catch(e => console.error('Error in loadTeachersCount:', e)),
-                loadBooksCount().catch(e => console.error('Error in loadBooksCount:', e)),
-                loadClubsCount().catch(e => console.error('Error in loadClubsCount:', e)),
-                loadTotalFees().catch(e => console.error('Error in loadTotalFees:', e)),
-                loadTodayAttendance().catch(e => console.error('Error in loadTodayAttendance:', e))
-            ]);
-            
-            console.log('Dashboard data loaded successfully');
-        } catch (error) {
-            console.error('Error in dashboard data loading:', error);
-            // Individual error handling is done in each function
-        } finally {
-            // Ensure all loading states are cleared
-            statElements.forEach(el => {
-                if (el.textContent === '...') {
-                    el.textContent = '-';
+                    // Registration successful, close modal and refresh data
+                    closeRegistrationModal();
+                    loadDashboardData();
+                    alert('Registration successful!');
+                } else {
+                    throw new Error(result.message || 'Registration failed');
                 }
-            });
-        }
-    }    alert('Registration failed: ' + error.message);
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert(error.message || 'Registration failed. Please try again.');
+            } finally {
+                // Re-enable the submit button
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
             }
-        });
 
         // Update fields based on role selection
         function updateFields() {
