@@ -1,13 +1,17 @@
 // Helper function to get dashboard URL based on user role
 function getDashboardURL(role) {
-    switch (role) {
+    // Ensure role is lowercase for consistent comparison
+    const userRole = (role || '').toLowerCase();
+    
+    switch (userRole) {
         case 'admin':
-            return '/index.html';  // Changed from '/admin/dashboard.html' to '/index.html'
+            return '/index.html';
         case 'teacher':
-            return '/teacher/dashboard.html';
+            return '/pages/teacher.html';
         case 'student':
-            return '/student/dashboard.html';
+            return '/pages/student.html';
         default:
+            console.warn('Unknown role, redirecting to login');
             return '/login.html';
     }
 }
