@@ -1112,15 +1112,38 @@ if (libraryForm) {
             
             try {
                 // Determine if this is an update or create
-                const url = bookId ? `/books/${bookId}` : '/books';
+                const url = bookId ? `/api/library/${bookId}` : '/api/library';
                 const method = bookId ? 'PUT' : 'POST';
+                
+                // Convert FormData to object
+                const bookData = {};
+                formData.forEach((value, key) => {
+                    // Convert empty strings to null and handle number fields
+                    if (value === '') {
+                        if (key === 'year' || key === 'copies') {
+                            bookData[key] = key === 'copies' ? 1 : null;
+                        } else {
+                            bookData[key] = null;
+                        }
+                    } else if (key === 'year' || key === 'copies') {
+                        bookData[key] = Number(value) || (key === 'copies' ? 1 : null);
+                    } else {
+                        bookData[key] = value;
+                    }
+                });
+                
+                // Ensure required fields are present
+                if (!bookData.title || !bookData.author || !bookData.genre || !bookData.className) {
+                    throw new Error('Please fill in all required fields: Title, Author, Genre, and Class are required');
+                }
                 
                 // Make API request using apiFetch
                 const result = await apiFetch(url, {
                     method,
-                    body: formData,
-                    // Don't set Content-Type header - let the browser set it with the correct boundary
-                    headers: {}
+                    body: JSON.stringify(bookData),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
                 // Show success message
@@ -1426,12 +1449,12 @@ async function loadIssuedBooks() {
         // Make API request using apiFetch with error handling
         let result;
         try {
-            result = await apiFetch(`/library/issued?${params.toString()}`);
+            result = await apiFetch(`/api/library/issued?${params.toString()}`);
         } catch (error) {
             console.warn('Primary endpoint failed, trying fallback...', error);
             try {
                 // Fallback to alternative endpoint if primary fails
-                result = await apiFetch(`/library/books/issued?${params.toString()}`);
+                result = await apiFetch(`/api/library/issued?${params.toString()}`);
             } catch (fallbackError) {
                 console.error('All API endpoints failed:', fallbackError);
                 throw new Error('Unable to load issued books. Please check your connection and try again.');
